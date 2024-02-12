@@ -132,7 +132,7 @@ public class Client : MonoBehaviour
             catch
             {
                 Disconnect();
-                //TODO: disconnect
+                
             }
         }
         private bool HandleData(byte[] _data)
@@ -204,7 +204,7 @@ public class Client : MonoBehaviour
         Debug.Log("Initialized packets.");
     }
 
-    private void Disconnect()
+    public void Disconnect()
     {
         if(isConnnected)
         {
