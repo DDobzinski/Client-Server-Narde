@@ -11,14 +11,14 @@ public class Point : MonoBehaviour
 {
     // Assuming you have a method to keep track of the checkers in the stack
     // Define the PointType enumeration here
-    
+    public int id;
     public bool isSelected = false;
     public bool isHighlighted = false;
     public Color defaultColor;
     public Color highlightColor;
     public Color selectedColor;
     private Image pointImage;
-    public PointType pointType; // Add this to specify the type in the Inspector
+    public PointType pointType;
     public List<GameObject> checkersStack = new List<GameObject>();
     
     public List<MoveOption> possibleMoves = new List<MoveOption>();

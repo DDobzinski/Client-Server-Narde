@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System;
 using Unity.VisualScripting;
+using UnityEngine.SceneManagement;
 
 public class Client : MonoBehaviour
 {
@@ -18,7 +19,7 @@ public class Client : MonoBehaviour
     private bool isConnnected = false;
 
 
-
+    public Player player;
     private delegate void PacketHandler(Packet _packet);
     private static Dictionary<int, PacketHandler> packetHandlers;
 
@@ -28,6 +29,7 @@ public class Client : MonoBehaviour
         if(instance == null)//ensures only one instance of the client class exists
         {
             instance = this;
+            DontDestroyOnLoad(gameObject); // Makes this GameObject persist across scenes
         }
         else if (instance != this)
         {
@@ -199,7 +201,15 @@ public class Client : MonoBehaviour
     {
         packetHandlers = new Dictionary<int, PacketHandler>()
         {
-            {(int) ServerPackets.welcome, ClientHandle.Welcome}
+            {(int) ServerPackets.welcome, ClientHandle.Welcome},
+            {(int) ServerPackets.lobbyCreated, ClientHandle.LobbyCreated},
+            {(int) ServerPackets.sendLobbies, ClientHandle.ReceiveLobbies},
+            {(int) ServerPackets.rejectJoin, ClientHandle.RejectJoin},
+            {(int) ServerPackets.confirmJoin, ClientHandle.ConfirmJoin},
+            {(int) ServerPackets.updateLobby, ClientHandle.UpdateLobby},
+            {(int) ServerPackets.allowGame, ClientHandle.AllowGame},
+            {(int) ServerPackets.denyGame, ClientHandle.DenyGame},
+            {(int) ServerPackets.endGame, ClientHandle.EndGame}
         };
         Debug.Log("Initialized packets.");
     }
@@ -210,7 +220,8 @@ public class Client : MonoBehaviour
         {
             isConnnected = false;
             tcp.socket.Close();
-
+            player = null;
+            SceneManager.LoadScene("Main");
             Debug.Log("Disconnected from server.");
         }
     }

@@ -455,6 +455,7 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # VS Code files for those working on multiple tools
+Narde-Client-Copy
 Narde-Client/.vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json

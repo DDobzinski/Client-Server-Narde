@@ -23,5 +23,86 @@ public class ClientSend : MonoBehaviour
             SendTCPData(_packet);
         }
     }
+
+    public static void CreateLobbyRequestToServer()
+    {
+        using(Packet _packet = new Packet((int)ClientPackets.createLobby))
+        {
+            _packet.Write(UIManager.instance.createLobbyScript.lobbyNameInput.text);
+            _packet.Write(Mathf.RoundToInt(UIManager.instance.createLobbyScript.SpectatorSlider.value));
+            
+            _packet.Write(UIManager.instance.createLobbyScript.TypeDropDown.options[UIManager.instance.createLobbyScript.TypeDropDown.value].text);
+
+            SendTCPData(_packet);
+        }
+    }
+
+    public static void LeaveLobby()
+    {
+        using(Packet _packet = new Packet((int)ClientPackets.leaveLobby))
+        {
+            _packet.Write(Client.instance.myId);
+            SendTCPData(_packet);
+        }
+    }
+
+    public static void RequestLobbies()
+    {
+        using(Packet _packet = new Packet((int)ClientPackets.getLobbies))
+        {
+            _packet.Write(Client.instance.myId);
+            SendTCPData(_packet);
+        }
+    }
+
+    public static void JoinLobby(int lobbyid, bool spectator)
+    {
+        using(Packet _packet = new Packet((int)ClientPackets.joinLobby))
+        {
+            _packet.Write(Client.instance.myId);
+            _packet.Write(lobbyid);
+            _packet.Write(spectator);
+            SendTCPData(_packet);
+        }
+    }
+
+    public static void StartGame()
+    {
+        using Packet _packet = new((int)ClientPackets.startGame);
+        _packet.Write(Client.instance.myId);
+
+        SendTCPData(_packet);
+    }
+
+    public static void EndTurn(int dice1, int dice2)
+    {
+        using Packet _packet = new((int)ClientPackets.endTurn);
+        _packet.Write(Client.instance.myId);
+        foreach(var move in GameManager.Instance.MovesDone)
+        {
+            _packet.Write(move.StartingPoint.id);
+            _packet.Write(move.TargetPoint.id);
+            _packet.Write(move.DiceUsed.Count);
+            for(int i = 0; i < move.DiceUsed.Count; i++)
+                    {
+                        if(move.DiceUsed[i] == 1)
+                        {
+                            _packet.Write(dice1);
+                        } 
+                        else 
+                        {
+                            _packet.Write(dice2);
+                        }
+                    }
+        }
+        SendTCPData(_packet);
+    }
+
+    public static void Surrender()
+    {
+        using Packet _packet = new((int)ClientPackets.surrender);
+        _packet.Write(Client.instance.myId);
+        SendTCPData(_packet);
+    }
     #endregion
 }

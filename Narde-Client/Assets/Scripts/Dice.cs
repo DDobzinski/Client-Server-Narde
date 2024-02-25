@@ -10,7 +10,8 @@ public class Dice : MonoBehaviour {
     // Reference to sprite renderer to change sprites
     private SpriteRenderer rend;
     public SpriteRenderer rend2;
-
+    public int finalSide = 0;
+    public int finalSide2 = 0;
     private BoxCollider diceCollider;
     public BoxCollider diceCollider2;
 	// Use this for initialization
@@ -26,7 +27,7 @@ public class Dice : MonoBehaviour {
     // If you left click over the dice then RollTheDice coroutine is started
     private void OnMouseDown()
     {
-        StartCoroutine("RollTheDice");
+        StartCoroutine(nameof(RollTheDice));
     }
 
     // Coroutine that rolls the dice
@@ -37,8 +38,6 @@ public class Dice : MonoBehaviour {
         int randomDiceSide = 0;
         int randomDiceSide2 = 0;
         // Final side or value that dice reads in the end of coroutine
-        int finalSide = 0;
-        int finalSide2 = 0;
         // Loop to switch dice sides ramdomly
         // before final side appears. 20 itterations here.
         for (int i = 0; i <= 20; i++)
@@ -55,9 +54,10 @@ public class Dice : MonoBehaviour {
 
         // Assigning final side so you can use this value later in your game
         // for player movement for example
-        finalSide = randomDiceSide + 1;
-        finalSide2 = randomDiceSide2 +1;
-        
+        rend.sprite = diceSides[finalSide];
+        rend2.sprite = diceSides[finalSide2];
+        finalSide += 1;
+        finalSide2 += 1;
         OnDiceRolled?.Invoke(finalSide, finalSide2); // Trigger event with final dice results
         //DisableDice();
     }
@@ -73,5 +73,14 @@ public class Dice : MonoBehaviour {
     {
         diceCollider.enabled = true; // Re-enable collider to allow interaction
         diceCollider2.enabled = true; // Disable collider to prevent interaction
+    }
+    public void SetFinalDice()
+    {
+        diceCollider.enabled = true; // Re-enable collider to allow interaction
+        diceCollider2.enabled = true; // Disable collider to prevent interaction
+    }
+    public void StartRollDice()
+    {
+        StartCoroutine(nameof(RollTheDice));
     }
 }

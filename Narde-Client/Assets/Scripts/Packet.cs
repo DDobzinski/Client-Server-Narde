@@ -2,18 +2,34 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using Unity.VisualScripting;
 using UnityEngine;
 
 /// <summary>Sent from server to client.</summary>
     public enum ServerPackets
     {
-        welcome = 1
+        welcome = 1,
+        lobbyCreated = 2,
+        sendLobbies = 3,
+        rejectJoin = 4,
+        confirmJoin = 5,
+        updateLobby = 6,
+        allowGame = 7,
+        denyGame = 8,
+        endGame = 9
     }
 
     /// <summary>Sent from client to server.</summary>
     public enum ClientPackets
     {
-        welcomeReceived = 1
+        welcomeReceived = 1,
+        createLobby = 2,
+        leaveLobby = 3,
+        getLobbies = 4,
+        joinLobby = 5,
+        startGame = 6,
+        surrender = 7,
+        endTurn = 8
     }
 
     public class Packet : IDisposable

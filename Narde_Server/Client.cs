@@ -11,7 +11,7 @@ namespace Narde_Server
         public static int dataBufferSize = 4096;//4MB
         public int id;
         public TCP tcp;
-
+        public Player? player; // Add this line
         public Client(int _clientid)
         {
             id = _clientid;
@@ -20,11 +20,11 @@ namespace Narde_Server
 
         public class TCP
         {
-            public TcpClient socket;//stores instance from ConnectCallback in Server.cs
+            public TcpClient? socket;//stores instance from ConnectCallback in Server.cs
             private readonly int id;//clients id
-            private NetworkStream stream;
-            private Packet receivedData;
-            private byte[] receiveBuffer;
+            private NetworkStream? stream;
+            private Packet? receivedData;
+            private byte[]? receiveBuffer;
             public TCP(int _id)
             {
                 id = _id;
@@ -148,9 +148,12 @@ namespace Narde_Server
 
         private void Disconnect()
         {
+            if(player != null && player.currentStatus == PlayerStatus.Player) player.currentLobby.RemovePlayer(Server.clients[id]);
+            else if(player != null && player.currentStatus == PlayerStatus.Spectator) player.currentLobby.RemoveSpectator(Server.clients[id]);
+            player = null;
             Console.WriteLine($"{tcp.socket.Client.RemoteEndPoint} has disconnected.");
-
             tcp.Disconnect();
+            
         }
     }
 }

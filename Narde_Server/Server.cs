@@ -12,10 +12,11 @@ namespace Narde_Server
     class Server
     {
         public static int MaxPlayers{get; private set;}// can only be set from within the class
-        
+        public static int MaxLobbies{get; private set;}// can only be set from within the class
         //Unnocupied port number
         public static int Port{get; private set;}
         public static Dictionary<int, Client> clients = new Dictionary<int, Client>();//Dictionary of clients, id is used as keys
+        public static Dictionary<int, Lobby> lobbies = new Dictionary<int, Lobby>();//Dictionary of lobbies, id is used as keys
         public delegate void PacketHandler(int _fromClient, Packet _packet);
         public static Dictionary<int, PacketHandler> packetHandlers;
 
@@ -26,6 +27,7 @@ namespace Narde_Server
         public static void Start(int _maxPlayers, int _port)
         {
             MaxPlayers = _maxPlayers;
+            MaxLobbies = _maxPlayers;
             Port = _port;
 
             Console.WriteLine($"Starting server...");
@@ -64,10 +66,17 @@ namespace Narde_Server
             for( int i = 1; i <= MaxPlayers; i++)//1 is first id
             {
                 clients.Add(i, new Client(i));
+                lobbies.Add(i, new Lobby(i));
             }
             packetHandlers = new Dictionary<int, PacketHandler>()
             {
-                {(int)ClientPackets.welcomeReceived, ServerHandle.WelcomeReceived}
+                {(int)ClientPackets.welcomeReceived, ServerHandle.WelcomeReceived},
+                {(int)ClientPackets.createLobby, ServerHandle.CreateLobby},
+                {(int)ClientPackets.leaveLobby, ServerHandle.LeaveLobby},
+                {(int)ClientPackets.getLobbies, ServerHandle.GetLobbies},
+                {(int)ClientPackets.joinLobby, ServerHandle.JoinLobby},
+                {(int)ClientPackets.startGame, ServerHandle.StartGame},
+                {(int)ClientPackets.surrender, ServerHandle.PlayerSurrender}
             };
             Console.WriteLine("Initialized packets.");
         }

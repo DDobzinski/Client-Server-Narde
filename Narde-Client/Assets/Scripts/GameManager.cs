@@ -7,7 +7,7 @@ using System;
 using UnityEngine.UI;
 using TMPro;
 using UnityEditor; // At the top of your file
-
+using UnityEngine.SceneManagement;
 public class MoveOption {
     public Point TargetPoint;
     public Point StartingPoint;
@@ -33,17 +33,22 @@ public class GameManager : MonoBehaviour
     private Point selectedPoint;
     public GameObject playerCheckerPrefab;
     public GameObject enemyCheckerPrefab;
-    public Dice die;
+    public Dice die1;
+    public Dice die2;
     public Remover remover;
     public Button endTurnButton;
     public TMP_Text endturnButtonText;
+    public CanvasGroup board;
+    public CanvasGroup UI;
+    public GameObject EndPanel;
+    public TMP_Text WinnerText;
     public List<Point> Points; // Assign the transform of each Point point in the editor
     public List<int> startingCheckersCountPlayer; // Number of Player 1 checkers at each Point point at the start
     public List<int> startingCheckersCountEnemy; // Number of Player 2 checkers at each Point point at the start
     private bool diceRolled = false;
     private int diceRollResult1 = 0;
     private int diceRollResult2 = 0;
-
+    public List<MoveOption> MovesDone = new();
     private int diceUseCount1 = 0;
     private int diceUseCount2 = 0;
     private bool firstTurnOfTheGame = true;
@@ -71,12 +76,11 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         SetupBoard();
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
+        if(Client.instance.player.currentStatus == PlayerStatus.Spectator)
+        {
+            endTurnButton.gameObject.SetActive(false);
+            die1.DisableDice();
+        }
     }
 
      void SetupBoard()
@@ -126,7 +130,7 @@ public class GameManager : MonoBehaviour
                     lastMoveDone = FindMoveForPoint(selectedPoint, point);
                     List<int> UsedDice = lastMoveDone.DiceUsed;
                     moveNr += UsedDice.Count;
-
+                    MovesDone.Add(lastMoveDone);
                     if(point.CanRemoveChecker() && !removalStage)
                     {
                         removalStage = AreAllCheckersInLastSix();
@@ -134,9 +138,17 @@ public class GameManager : MonoBehaviour
 
                     for(int i = 0; i < UsedDice.Count; i++)
                     {
-                        if(UsedDice[i] == 1) diceUseCount1 -= 1;
-                        else diceUseCount2-= 1;
+                        if(UsedDice[i] == 1)
+                        {
+                            diceUseCount1 -= 1;
+                        } 
+                        else 
+                        {
+                            diceUseCount2-= 1;
+                        }
                     }
+
+                    
                     if(selectedPoint == Points[0])
                     {
                         moveOfTheHeadCount += 1;
@@ -622,10 +634,33 @@ public class GameManager : MonoBehaviour
             diceUseCount2 = 1;
         }
         
-        die.DisableDice();
+        die1.DisableDice();
         CalculateAllowedMoves(Points, diceUseCount1, diceUseCount2, removalStage);
         diceRolled = true;
     }
+    public void DisableDice()
+    {
+        die1.DisableDice();
+    }
+
+      public void EnableDice()
+    {
+        die1.EnableDice();
+    }
+
+    public void SetFinaleDice(int _final1, int _final2)
+    {
+        die1.finalSide = _final1 - 1;
+        die1.finalSide2 = _final2 - 1;
+
+        die2.finalSide2 = _final1 - 1;
+        die2.finalSide = _final2 - 1;
+    }
+    public void RollDice()
+    {
+        die1.StartRollDice();
+    }
+
 
     public void EndTurn()
     {
@@ -636,15 +671,45 @@ public class GameManager : MonoBehaviour
         }
         moveNr = 1;
         lastMoveDone = null;
+        firstTurnOfTheGame =false;
         diceRolled = false;
-        die.EnableDice();
         MakeButtonInteractable(false);
+        ClientSend.EndTurn(diceRollResult1, diceRollResult2);
     }
 
     void MakeButtonInteractable(bool isInteractable)
     {
         endTurnButton.interactable = isInteractable;
         endturnButtonText.color = isInteractable ? new Color32(115, 243, 121, 255) : new Color32(224, 224, 224, 255); // Change as needed
+    }
+
+    public void Surrender()
+    {
+        UI.interactable = false;
+        board.interactable = false;
+        ClientSend.Surrender();
+    }
+
+    public void FinishGame(string WinnerName)
+    {
+        UI.interactable = false;
+        board.interactable = false;
+        EndPanel.SetActive(true);
+        foreach(Point point in Points)
+        {
+            foreach(GameObject checker in point.checkersStack)
+            {
+                Checker checkerComponent = checker.GetComponent<Checker>();
+                checkerComponent.MakeCheckerInvisible();
+            }
+        }
+        WinnerText.text = WinnerName + " Wins";
+    }
+
+    public void ReturnToMenu()
+    {
+        SceneManager.LoadScene("Main");
+        Client.instance.player.lobby.SetStatus(GameState.Menu);
     }
 }
 
