@@ -22,6 +22,18 @@ public class Dice : MonoBehaviour {
         diceCollider = GetComponent<BoxCollider>();
         // Load dice sides sprites to array from DiceSides subfolder of Resources folder
         diceSides = Resources.LoadAll<Sprite>("DiceSides/");
+
+        if(Client.instance.player.turn)
+        {
+            EnableDice();
+            SetFinalDice(Client.instance.player.dice1, Client.instance.player.dice2);
+        }
+        else
+        {
+            DisableDice();
+            SetFinalDice(Client.instance.player.dice1, Client.instance.player.dice2);
+            StartRollDice();
+        }
 	}
 	
     // If you left click over the dice then RollTheDice coroutine is started
@@ -58,7 +70,11 @@ public class Dice : MonoBehaviour {
         rend2.sprite = diceSides[finalSide2];
         finalSide += 1;
         finalSide2 += 1;
-        OnDiceRolled?.Invoke(finalSide, finalSide2); // Trigger event with final dice results
+        if(Client.instance.player.turn)
+        {
+            OnDiceRolled?.Invoke(finalSide, finalSide2); // Trigger event with final dice results
+        }
+        
         //DisableDice();
     }
 
@@ -74,10 +90,10 @@ public class Dice : MonoBehaviour {
         diceCollider.enabled = true; // Re-enable collider to allow interaction
         diceCollider2.enabled = true; // Disable collider to prevent interaction
     }
-    public void SetFinalDice()
+    public void SetFinalDice(int final1, int final2)
     {
-        diceCollider.enabled = true; // Re-enable collider to allow interaction
-        diceCollider2.enabled = true; // Disable collider to prevent interaction
+        finalSide = final1 - 1; // Re-enable collider to allow interaction
+        finalSide2 = final2 - 1; // Disable collider to prevent interaction
     }
     public void StartRollDice()
     {

@@ -17,9 +17,13 @@ MonoBehaviour:
   description: 
   preview: {fileID: 0}
   dependencies:
+  - dependency: {fileID: 2800000, guid: a7ec9e7ad8b847b7ae4510af83c5d868, type: 3}
+    instantiationMode: 1
   - dependency: {fileID: 2800000, guid: 767bbf226d1e5cb4b9d8675a99d02c2d, type: 3}
     instantiationMode: 0
   - dependency: {fileID: 1601926204309910903, guid: 46e707c30f3feaf4c86468ec8efcb94f, type: 3}
+    instantiationMode: 0
+  - dependency: {fileID: 3015842430229435956, guid: ccd0c407360a8a341bfb186bb0608498, type: 3}
     instantiationMode: 0
   - dependency: {fileID: 2800000, guid: a9975ebe1309ad04f85c4acbb5d3c25e, type: 3}
     instantiationMode: 0
@@ -49,6 +53,8 @@ MonoBehaviour:
     instantiationMode: 0
   - dependency: {fileID: 2800000, guid: 38beb8296458ea24882faf1f6c52bd9d, type: 3}
     instantiationMode: 0
+  - dependency: {fileID: 1825220558836004565, guid: 8779072f4192ef94fb5d6558c3f85f07, type: 3}
+    instantiationMode: 0
   - dependency: {fileID: 2800000, guid: 26dad06c89f656447819a7fba7caa430, type: 3}
     instantiationMode: 0
   - dependency: {fileID: 2800000, guid: 4ebc93459b0a8b749aeb7d510b5f504b, type: 3}
@@ -65,12 +71,16 @@ MonoBehaviour:
     instantiationMode: 0
   - dependency: {fileID: 2800000, guid: c81b89b470cd5e5499e651d6db384ea0, type: 3}
     instantiationMode: 0
+  - dependency: {fileID: 3244346924045102843, guid: 78744249d4630204c8fa6d97b1e202a0, type: 3}
+    instantiationMode: 0
   - dependency: {fileID: 2800000, guid: 65b6efb6fe76a1e4b9aba79b6046282a, type: 3}
     instantiationMode: 0
   - dependency: {fileID: 11400000, guid: ccd6b60b1b9bfe047a843e64485041ea, type: 2}
     instantiationMode: 1
   - dependency: {fileID: 2800000, guid: ee148e281f3c41c5b4ff5f8a5afe5a6c, type: 3}
     instantiationMode: 1
+  - dependency: {fileID: 2800000, guid: 74164654cf03fbd4aad4ceed92b15187, type: 3}
+    instantiationMode: 0
   - dependency: {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
     instantiationMode: 0
   - dependency: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

@@ -78,10 +78,18 @@ public class ClientSend : MonoBehaviour
     {
         using Packet _packet = new((int)ClientPackets.endTurn);
         _packet.Write(Client.instance.myId);
+        _packet.Write(GameManager.Instance.MovesDone.Count);
         foreach(var move in GameManager.Instance.MovesDone)
         {
             _packet.Write(move.StartingPoint.id);
-            _packet.Write(move.TargetPoint.id);
+            if(move.TargetPoint != null)
+            {
+                _packet.Write(move.TargetPoint.id);
+            }
+            else
+            {
+                _packet.Write(24);
+            }
             _packet.Write(move.DiceUsed.Count);
             for(int i = 0; i < move.DiceUsed.Count; i++)
                     {
@@ -95,6 +103,7 @@ public class ClientSend : MonoBehaviour
                         }
                     }
         }
+
         SendTCPData(_packet);
     }
 

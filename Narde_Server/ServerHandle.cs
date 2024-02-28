@@ -231,7 +231,11 @@ namespace Narde_Server
                             ServerSend.AllowGame(client.id, false, playDiceRoll1, playDiceRoll2);
                         }
                     }
-                    ServerSend.DenyGame(_fromClient);
+                    else
+                    {
+                        ServerSend.DenyGame(_fromClient);
+                    }
+                    
                     //Deny if lobby not ready
                 }
             }
@@ -259,6 +263,7 @@ namespace Narde_Server
                     {
                         string winnerName = "";
                         lobby.gameState = GameState.Menu;
+                        lobby.game = null;
                         if(lobby.type == LobbyType.PvP)
                         {
                             foreach(var client in lobby.PlayerClients)
@@ -279,9 +284,102 @@ namespace Narde_Server
                             ServerSend.EndGame(client.id, winnerName);
                         }
 
-                        foreach(var client in lobby.PlayerClients)
+                        foreach(var client in lobby.SpectatorClients)
                         {
                             ServerSend.EndGame(client.id, winnerName);
+                        }
+                    }
+                    //Deny if lobby not ready
+                }
+            }
+            else
+            {
+                Console.WriteLine($"ID: {_fromClient}) has assumed the wrong client ID ({_id})!");
+            }
+            //Console.WriteLine($"{Server.clients[_fromClient].tcp.socket.Client.RemoteEndPoint} connected and is now player {_fromClient}.");
+            
+            
+            //Server.clients[_fromClient].player = new Player(_fromClient, _username);
+        }
+
+        public static void PlayerEndTurn(int _fromClient, Packet _packet)
+        {
+            int _id = _packet.ReadInt();
+            if(_id == _fromClient)
+            {
+                Lobby lobby = Server.clients[_fromClient].player.currentLobby;
+                Player player = Server.clients[_fromClient].player;
+
+                if(player.currentStatus == PlayerStatus.Player)
+                {
+                    if(lobby.gameState == GameState.InGame && lobby.game.currentPlayerID == _fromClient)
+                    {
+                        Console.WriteLine($"End Turn Received!");
+                        int moveCount = _packet.ReadInt();
+                        List<Move> moves = new();
+                        for(int i = 0; i < moveCount; i++)
+                        {
+                            int startPointID = _packet.ReadInt();
+                            int targetPointID = _packet.ReadInt();
+                            int diceCount = _packet.ReadInt();
+
+                            List<int> DiceUsed = new();
+                            for(int j = 0; j < diceCount; j++)
+                            {
+                                DiceUsed.Add(_packet.ReadInt());
+                            }
+                            moves.Add(new(startPointID, targetPointID, DiceUsed));
+                        }
+                        Console.WriteLine($"End Turn Received! Start {moves[0].StartingPoint} End {moves[0].TargetPoint}");
+                        bool valid = Server.clients[_fromClient].player.currentLobby.game.ValidateTurn(moves);
+                        if(valid)
+                        {
+                            int playerWon = Server.clients[_fromClient].player.currentLobby.game.CheckForWin();
+
+                            if(playerWon == 1)
+                            {
+                                foreach(var client in lobby.PlayerClients)
+                                {
+                                    ServerSend.EndGame(client.id,  Server.clients[Server.clients[_fromClient].player.currentLobby.game.player1ID].player.username);
+                                }
+
+                                foreach(var client in lobby.SpectatorClients)
+                                {
+                                    ServerSend.EndGame(client.id, Server.clients[Server.clients[_fromClient].player.currentLobby.game.player1ID].player.username);
+                                }
+                            }
+                            else if(playerWon == 2)
+                            {
+                                foreach(var client in lobby.PlayerClients)
+                                {
+                                    ServerSend.EndGame(client.id, Server.clients[Server.clients[_fromClient].player.currentLobby.game.player2ID].player.username);
+                                }
+
+                                foreach(var client in lobby.SpectatorClients)
+                                {
+                                    ServerSend.EndGame(client.id, Server.clients[Server.clients[_fromClient].player.currentLobby.game.player2ID].player.username);
+                                }
+                            }
+                            else
+                            {
+
+                                foreach(var client in lobby.PlayerClients)
+                                {
+                                    if(client.id == lobby.game.currentPlayerID)
+                                    {
+                                        ServerSend.UpdateGame(client.id, true, lobby.game.diceResult1, lobby.game.diceResult2, moves);
+                                    }
+                                    else
+                                    {
+                                        ServerSend.UpdateGame(client.id, false, lobby.game.diceResult1, lobby.game.diceResult2, moves);
+                                    }
+                                }
+
+                                foreach(var client in lobby.SpectatorClients)
+                                {
+                                    ServerSend.UpdateGame(client.id, false, lobby.game.diceResult1, lobby.game.diceResult2, moves);
+                                }
+                            }
                         }
                     }
                     //Deny if lobby not ready

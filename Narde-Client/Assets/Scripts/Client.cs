@@ -209,7 +209,8 @@ public class Client : MonoBehaviour
             {(int) ServerPackets.updateLobby, ClientHandle.UpdateLobby},
             {(int) ServerPackets.allowGame, ClientHandle.AllowGame},
             {(int) ServerPackets.denyGame, ClientHandle.DenyGame},
-            {(int) ServerPackets.endGame, ClientHandle.EndGame}
+            {(int) ServerPackets.endGame, ClientHandle.EndGame},
+            {(int) ServerPackets.updateGame, ClientHandle.UpdateGame}
         };
         Debug.Log("Initialized packets.");
     }

@@ -12,6 +12,9 @@ public class Player
     public string playerName;
     public Lobby lobby = null;
     public PlayerStatus currentStatus = PlayerStatus.Menu; 
+    public bool turn = false;
+    public int dice1;
+    public int dice2;
     public Player(string _playerName)
     {
         playerName = _playerName;

@@ -345,5 +345,41 @@ namespace Narde_Server
                 SendTCPData(_toClient, _packet);
             }
         }
+
+        public static void UpdateGame(int _toClient, bool turn, int dice1, int dice2, List<Move> moves)
+        {
+            using (Packet _packet = new Packet((int)ServerPackets.updateGame))//using block makes so that packet is automatically disposed
+            {
+                _packet.Write(_toClient);
+                _packet.Write(turn);
+                _packet.Write(dice1);
+                _packet.Write(dice2);
+                _packet.Write(moves.Count);
+                foreach(var move in moves)
+                {
+                   int moveTempStart = move.StartingPoint;
+                   int moveTempTarget = move.TargetPoint;
+                   /*if(Server.clients[_toClient].player.currentStatus == PlayerStatus.Spectator)
+                   {
+                        if(Server.clients[_toClient].player.currentLobby.game.currentPlayerID == Server.clients[_toClient].player.currentLobby.game.player1ID)
+                        {
+                            moveTempStart = (moveTempStart + 12) % 24;
+                            moveTempTarget = (moveTempTarget + 12) % 24;
+                        }
+                   }else*/
+                   if(Server.clients[_toClient].player.currentStatus == PlayerStatus.Player && turn)
+                   {
+                        if(Server.clients[_toClient].player.currentLobby.game.currentPlayerID == Server.clients[_toClient].player.currentLobby.game.player2ID)
+                        {
+                            moveTempStart = (moveTempStart + 12) % 24;
+                            moveTempTarget = (moveTempTarget + 12) % 24;
+                        }
+                   }
+                    _packet.Write(moveTempStart);
+                    _packet.Write(moveTempTarget);
+                }
+                SendTCPData(_toClient, _packet);
+            }
+        }
     }
 }

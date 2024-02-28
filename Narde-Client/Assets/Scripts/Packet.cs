@@ -16,7 +16,8 @@ using UnityEngine;
         updateLobby = 6,
         allowGame = 7,
         denyGame = 8,
-        endGame = 9
+        endGame = 9,
+        updateGame = 10
     }
 
     /// <summary>Sent from client to server.</summary>

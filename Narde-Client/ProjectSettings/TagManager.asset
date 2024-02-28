@@ -46,3 +46,6 @@ TagManager:
   - name: Checkers
     uniqueID: 611197877
     locked: 0
+  - name: EndPanel
+    uniqueID: 1974299527
+    locked: 0

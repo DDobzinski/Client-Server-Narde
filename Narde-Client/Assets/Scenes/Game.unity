@@ -7056,8 +7056,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rend2: {fileID: 666304178}
-  finalSide: 0
-  finalSide2: 0
+  finalSide: 2
+  finalSide2: 2
   diceCollider2: {fileID: 666304177}
 --- !u!1 &2140707433
 GameObject:

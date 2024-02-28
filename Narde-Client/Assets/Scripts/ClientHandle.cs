@@ -204,17 +204,10 @@ public class ClientHandle : MonoBehaviour
         
         UIManager.instance.StartGame();
         Client.instance.player.lobby.SetStatus(GameState.InGame);
-        if(_firstMove)
-        {
-            GameManager.Instance.EnableDice();
-            GameManager.Instance.SetFinaleDice(_dice1, _dice2);
-        }
-        else
-        {
-            GameManager.Instance.DisableDice();
-            GameManager.Instance.SetFinaleDice(_dice1, _dice2);
-            GameManager.Instance.RollDice();
-        }
+        Client.instance.player.turn = _firstMove;
+        Client.instance.player.dice1 = _dice1;
+        Client.instance.player.dice2 = _dice2;
+
         //Client.instance.myId = _myId;
         //Maybe check later if id matches
     }
@@ -236,6 +229,42 @@ public class ClientHandle : MonoBehaviour
         string winnerName = _packet.ReadString();
         
         GameManager.Instance.FinishGame(winnerName);
+        //Client.instance.myId = _myId;
+        //Maybe check later if id matches
+    }
+
+    public static void UpdateGame(Packet _packet)
+    {
+        
+        int _myId = _packet.ReadInt();
+        bool turn = _packet.ReadBool();
+        int _dice1= _packet.ReadInt();
+        int _dice2 = _packet.ReadInt();
+        
+        int moveCount = _packet.ReadInt();
+        Client.instance.player.turn = turn;
+        Client.instance.player.dice1 = _dice1;
+        Client.instance.player.dice2 = _dice2;
+        if(turn || Client.instance.player.currentStatus == PlayerStatus.Spectator)
+        {
+            for (int i = 0; i < moveCount; i++)
+            {
+                int start = _packet.ReadInt();
+                int end = _packet.ReadInt();
+                GameManager.Instance.UpdateBoard(start, end);
+            }
+        }
+        if(turn)
+        {
+            GameManager.Instance.EnableDice();
+            GameManager.Instance.SetFinaleDice(_dice1, _dice2);
+        }
+        else
+        {
+            GameManager.Instance.DisableDice();
+            GameManager.Instance.SetFinaleDice(_dice1, _dice2);
+            GameManager.Instance.RollDice();
+        }
         //Client.instance.myId = _myId;
         //Maybe check later if id matches
     }

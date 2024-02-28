@@ -15,7 +15,8 @@ namespace Narde_Server
         updateLobby = 6,
         allowGame = 7,
         denyGame = 8,
-        endGame = 9
+        endGame = 9,
+        updateGame = 10
     }
 
     /// <summary>Sent from client to server.</summary>
@@ -27,7 +28,8 @@ namespace Narde_Server
         getLobbies = 4,
         joinLobby = 5,
         startGame = 6,
-        surrender = 7
+        surrender = 7,
+        endTurn = 8
     }
 
     public class Packet : IDisposable
