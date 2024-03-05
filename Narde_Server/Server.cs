@@ -77,7 +77,8 @@ namespace Narde_Server
                 {(int)ClientPackets.joinLobby, ServerHandle.JoinLobby},
                 {(int)ClientPackets.startGame, ServerHandle.StartGame},
                 {(int)ClientPackets.surrender, ServerHandle.PlayerSurrender},
-                {(int)ClientPackets.endTurn, ServerHandle.PlayerEndTurn}
+                {(int)ClientPackets.endTurn, ServerHandle.PlayerEndTurn},
+                {(int)ClientPackets.endTurnAI, ServerHandle.AIEndTurn}
             };
             Console.WriteLine("Initialized packets.");
         }

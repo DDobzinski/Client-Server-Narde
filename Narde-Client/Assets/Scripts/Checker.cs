@@ -5,7 +5,8 @@ public class Checker : MonoBehaviour
     public enum CheckerColor
     {
         Player,
-        Enemy
+        Enemy,
+        None
         // Add more colors if needed
     }
     public CheckerColor checkerColor;

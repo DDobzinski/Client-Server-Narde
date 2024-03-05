@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
 namespace Narde_Server
@@ -157,7 +158,7 @@ namespace Narde_Server
                     Console.WriteLine($"Exception 3 not followed!");
                     return false;
                 }
-                else if(diceResult1 == 4 && BoardCopy[headIndex + 8].checkerCount != 2)
+                else if(diceResult1 == 4 && BoardCopy[headIndex + 8].checkerCount != 2 && Board[headIndex + 8].checkerCount == 0)
                 {
                     Console.WriteLine($"Exception 4 not followed!");
                     return false;
@@ -171,7 +172,7 @@ namespace Narde_Server
 
             if(dice1Uses != 0 && dice2Uses != 0)
             {
-                int movesUsed = diceResult1 == diceResult2? 4 - dice1Uses: 1;
+                int movesUsed = diceResult1 == diceResult2? 4 - dice1Uses: 1 - dice1Uses + 1 - dice2Uses;
                 int dice1UsesSim = 0;
                 int dice2UsesSim = 0;
                 if(maxMoves == 4)
@@ -194,12 +195,13 @@ namespace Narde_Server
                     movesPossible = CalculateAllowedMoves(BoardCopy, dice1UsesSim, dice2UsesSim, headIndex, lastIndex, removingP2, movesPossible, maxMoves);
                     
                 }
+                Console.WriteLine($"Moves Possible : {movesPossible}");
                 if(movesUsed != movesPossible)
                 {
                     Console.WriteLine($"More moves possible");
                     return false;
                 } 
-                if(diceResult1 != diceResult2)
+                else if(diceResult1 != diceResult2)
                 {
                     if(diceResult1 > diceResult2 && dice1Uses != 0 && canHigherDieBeUsed) 
                     {
@@ -219,7 +221,7 @@ namespace Narde_Server
 
         public bool ValidateMove(List<Point> Board,Move move, int dice1Uses, int dice2Uses, int lastIndex, bool removingP1Temp, bool removingP2Temp)
         {
-            Console.WriteLine($"Start({move.StartingPoint}), target({move.TargetPoint})");
+            Console.WriteLine($"Start({move.StartingPoint}), target({move.TargetPoint}), dice used {move.DiceUsed.Count}");
             int totalDice = 0;
             int enemyPlayerId = currentPlayerID == player1ID? player2ID: player1ID;
             if(move.StartingPoint < 24 && move.StartingPoint >= 0)
@@ -237,92 +239,158 @@ namespace Narde_Server
                 {
                     Console.WriteLine($"Target playerId has enemyPlayerId");
                     return false;
-                } 
-            }
-            int currentPoint = move.StartingPoint;
-            for(int i = 0; i < move.DiceUsed.Count; i ++)
-            {
-                int midpoint;
-                if(move.DiceUsed[i] == diceResult1)
-                {
-                    if(dice1Uses < 1)
-                    {
-                        Console.WriteLine($"Dice1Used more than allowed");
-                        return false;
-                    }
-                    dice1Uses -= 1;
-                    midpoint = (currentPoint + diceResult1) % 24;
                 }
-                else if(move.DiceUsed[i] == diceResult2)
+                int currentPoint = move.StartingPoint;
+
+                for(int i = 0; i < move.DiceUsed.Count; i++)
                 {
-                    if(dice2Uses < 1)
+                    int midpoint;
+                    if(move.DiceUsed[i] == diceResult1)
                     {
-                        Console.WriteLine($"Dice2Used more than allowed");
-                        return false;
-                    }
-                    dice2Uses -= 1;
-                    midpoint = (currentPoint + diceResult2) % 24;
-                    
-                }
-                else
-                    {
-                        Console.WriteLine($"Dice value used does not exist");
-                        return false;
-                    }
-                
-                if(midpoint < 24 && Board[midpoint].playerID == enemyPlayerId) 
-                    {
-                        Console.WriteLine($"MidPoint is blocked");
-                        return false;
-                    }
-                if(midpoint < 24 && CreatesRowOfSix(Board, currentPoint, midpoint))
-                {
-                    if(!HasOpponentsCheckerPast(Board, midpoint, enemyPlayerId))
-                    {
-                        Console.WriteLine($"Creates blockade");
-                        return false;
-                    }
-                }
-                if(midpoint == 24)
-                {
-                    if(!(currentPoint <= lastIndex && currentPoint > lastIndex - 6))
-                    {
-                        Console.WriteLine($"Not Removal Point");
-                        return false;
-                    }
-                    if(currentPlayerID == player1ID)
-                    {   
-                        if(!removingP1Temp) 
+                        if(dice1Uses < 1)
                         {
-                            Console.WriteLine($"Not removal phase p1");
+                            Console.WriteLine($"Dice1Used more than allowed");
                             return false;
                         }
+                        dice1Uses -= 1;
+                        midpoint = (currentPoint + diceResult1) % 24;
+                    }
+                    else if(move.DiceUsed[i] == diceResult2)
+                    {
+                        if(dice2Uses < 1)
+                        {
+                            Console.WriteLine($"Dice2Used more than allowed");
+                            return false;
+                        }
+                        dice2Uses -= 1;
+                        midpoint = (currentPoint + diceResult2) % 24;
+                        
                     }
                     else
-                    {
-                        if(!removingP2Temp)
                         {
-                            Console.WriteLine($"Not removal phase p2");
+                            Console.WriteLine($"Dice value used does not exist");
+                            return false;
+                        }
+                    
+                    if(midpoint < 24 && Board[midpoint].playerID == enemyPlayerId) 
+                        {
+                            Console.WriteLine($"MidPoint is blocked");
+                            return false;
+                        }
+                    if(midpoint < 24 && CreatesRowOfSix(Board, currentPoint, midpoint))
+                    {
+                        if(!HasOpponentsCheckerPast(Board, midpoint, enemyPlayerId))
+                        {
+                            Console.WriteLine($"Creates blockade");
                             return false;
                         }
                     }
-                    bool succesfulRemoval = RemovalCheck(Board, currentPoint, move.DiceUsed[i], lastIndex);
-
-                    if(!succesfulRemoval)
-                    {
-                        Console.WriteLine($"Removal Check blocked");
-                        return false;
-                    }
+                    totalDice += move.DiceUsed[i];
+                    currentPoint = midpoint;
                 }
-                totalDice += move.DiceUsed[i];
-                currentPoint = midpoint;
-            }
-            if((move.StartingPoint + totalDice) % 24 != move.TargetPoint) 
+                if((move.StartingPoint + totalDice) % 24 != move.TargetPoint) 
                 {
                     Console.WriteLine($"Total dice used is not equal distance to Target. Start({move.StartingPoint}), total({totalDice}), target({move.TargetPoint})");
                     return false;
                 }
 
+            }
+            else if ( move.TargetPoint == 24)
+            {
+                int currentPoint = move.StartingPoint;
+
+                for(int i = 0; i < move.DiceUsed.Count; i ++)
+                {
+                    int midpoint;
+                    if(move.DiceUsed[i] == diceResult1)
+                    {
+                        if(dice1Uses < 1)
+                        {
+                            Console.WriteLine($"Dice1Used more than allowed");
+                            return false;
+                        }
+                        dice1Uses -= 1;
+                        if(currentPoint + diceResult1 >= lastIndex + 1 && currentPoint <= lastIndex)
+                        {
+                            midpoint = 24;
+                        }
+                        else
+                        {
+                            midpoint = (currentPoint + diceResult1) % 24;
+                        }
+                    }
+                    else if(move.DiceUsed[i] == diceResult2)
+                    {
+                        if(dice2Uses < 1)
+                        {
+                            Console.WriteLine($"Dice2Used more than allowed");
+                            return false;
+                        }
+                        dice2Uses -= 1;
+                        if(currentPoint + diceResult2 >= lastIndex + 1  && currentPoint <= lastIndex)
+                        {
+                            midpoint = 24;
+                        }
+                        else
+                        {
+                            midpoint = (currentPoint + diceResult2) % 24;
+                        }
+                        
+                    }
+                    else
+                        {
+                            Console.WriteLine($"Dice value used does not exist");
+                            return false;
+                        }
+                    
+                    if(midpoint < 24 && Board[midpoint].playerID == enemyPlayerId) 
+                        {
+                            Console.WriteLine($"MidPoint is blocked");
+                            return false;
+                        }
+                    if(midpoint < 24 && CreatesRowOfSix(Board, currentPoint, midpoint))
+                    {
+                        if(!HasOpponentsCheckerPast(Board, midpoint, enemyPlayerId))
+                        {
+                            Console.WriteLine($"Creates blockade");
+                            return false;
+                        }
+                    }
+                    if(midpoint == 24)
+                    {
+                        if(!(currentPoint <= lastIndex && currentPoint > lastIndex - 6))
+                        {
+                            Console.WriteLine($"Not Removal Point");
+                            return false;
+                        }
+                        if(currentPlayerID == player1ID)
+                        {   
+                            if(!removingP1Temp) 
+                            {
+                                Console.WriteLine($"Not removal phase p1");
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            if(!removingP2Temp)
+                            {
+                                Console.WriteLine($"Not removal phase p2");
+                                return false;
+                            }
+                        }
+                        bool succesfulRemoval = RemovalCheck(Board, currentPoint, move.DiceUsed[i], lastIndex);
+
+                        if(!succesfulRemoval)
+                        {
+                            Console.WriteLine($"Removal Check blocked");
+                            return false;
+                        }
+                    }
+                    totalDice += move.DiceUsed[i];
+                    currentPoint = midpoint;
+                }
+            }
             //ADD FOR FIRST MOVE RULES
             //Add for moving from head
             //Add removing
@@ -382,7 +450,7 @@ namespace Narde_Server
                     else checkLeft = false;   
                 }
             }
-            if(rowLengthCount == 6) return true;
+            if(rowLengthCount >= 6) return true;
             return false;
         }
 
@@ -433,11 +501,11 @@ namespace Narde_Server
         
         private bool RemovalCheck(List<Point> Board,int startPoint, int moveDistance, int lastIndex)
         {
-            if(lastIndex - startPoint == moveDistance)
+            if(lastIndex + 1- startPoint == moveDistance)
             {
                 return true;
             }
-            else if( lastIndex - startPoint < moveDistance)
+            else if( lastIndex + 1- startPoint < moveDistance)
             {
                 bool previousAreEmpty = true;
                 for(int i = startPoint-1; i > lastIndex - 6; i--)
@@ -482,9 +550,9 @@ namespace Narde_Server
             removingP1 = removingP1Temp;
             removingP2 = removingP2Temp;
             canHigherDieBeUsed = false;
-            currentPlayerID = currentPlayerID == player1ID? player2ID: player1ID;
+            
             if(firstTurn && currentPlayerID == player2ID) firstTurn = false;
-
+            currentPlayerID = currentPlayerID == player1ID? player2ID: player1ID;
             Random rand = new();
             diceResult1 = rand.Next(1, 7);
             diceResult2 = rand.Next(1, 7);
@@ -504,6 +572,10 @@ namespace Narde_Server
             for(int i = 0; i < 24; i++)
             {
                 //Debug.Log(copiedPoints.IndexOf(point));
+                if(currentPlayerID == player2ID)
+                {
+                    i = (i + 12) % 24;
+                }
                 if(BoardCopy[i].checkerCount > 0 && BoardCopy[i].playerID == currentPlayerID)
                 {   
                     
@@ -516,8 +588,17 @@ namespace Narde_Server
                     bool removalStageTemp = simRemovalStage;
                     if(dice1uses > 0)
                     {
-                        List<int> list = new(diceResult1);
-                        Move move = new(i, i + diceResult1, list);
+                        Move move;
+                        List<int> list =new() { diceResult1};
+                        if(i + diceResult1 > lastIndex && i <= lastIndex)
+                        {
+                            move = new(i, 24, list);
+                        }
+                        else
+                        {
+                             move = new(i, (i + diceResult1) % 24, list);
+                        }
+                       
                         dieMove1Possible = ValidateMove(BoardCopy, move, dice1uses, dice2uses, lastIndex, simRemovalStage, simRemovalStage);
                         if(dieMove1Possible)
                         {
@@ -525,7 +606,7 @@ namespace Narde_Server
                             {
                                 calculateHeadMoveCountTemp += 1;
                             }
-                            if(move.TargetPoint < 24 && BoardCopy[move.TargetPoint].checkerCount > 0 && !removalStageTemp)
+                            if(move.TargetPoint < lastIndex + 1 && move.TargetPoint > lastIndex -6 && !removalStageTemp)
                             {
                                 removalStageTemp = AreAllCheckersInLastSix(BoardCopy, lastIndex);
                             }
@@ -562,8 +643,17 @@ namespace Narde_Server
                         calculateHeadMoveCountTemp = CalculateHeadMoveCount;
                         removalStageTemp = simRemovalStage;
                         
-                        List<int> list = new(diceResult2);
-                        Move move = new(i, i + diceResult2, list);
+                        List<int> list = new() { diceResult2};
+
+                        Move move;
+                        if(i + diceResult2 > lastIndex && i <= lastIndex)
+                        {
+                            move = new(i, 24, list);
+                        }
+                        else
+                        {
+                             move = new(i, (i + diceResult2) % 24, list);
+                        }
                         dieMove2Possible = ValidateMove(BoardCopy, move, dice1uses, dice2uses, lastIndex, simRemovalStage, simRemovalStage);
                         if(dieMove2Possible)
                         {
@@ -571,7 +661,7 @@ namespace Narde_Server
                             {
                                 calculateHeadMoveCountTemp += 1;
                             }
-                            if(move.TargetPoint < 24 && BoardCopy[move.TargetPoint].checkerCount > 0 && !removalStageTemp)
+                            if(move.TargetPoint < lastIndex + 1 && move.TargetPoint > lastIndex -6  && !removalStageTemp)
                             {
                                 removalStageTemp = AreAllCheckersInLastSix(BoardCopy, lastIndex);
                             }

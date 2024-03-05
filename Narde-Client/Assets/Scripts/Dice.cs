@@ -99,4 +99,9 @@ public class Dice : MonoBehaviour {
     {
         StartCoroutine(nameof(RollTheDice));
     }
+    public void Reset()
+    {
+        rend.sprite = diceSides[0];
+        rend2.sprite = diceSides[0];
+    }
 }

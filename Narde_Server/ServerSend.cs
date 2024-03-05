@@ -323,6 +323,18 @@ namespace Narde_Server
                 _packet.Write(firstMove);
                 _packet.Write(dice1);
                 _packet.Write(dice2);
+                if(Server.clients[_toClient].player.currentStatus == PlayerStatus.Spectator)
+                {
+                    if(Server.clients[_toClient].player.currentLobby.type == LobbyType.PvAI && Server.clients[_toClient].player.currentLobby.game.currentPlayerID == -1)
+                    {
+                        _packet.Write("AI");
+                    }
+                    else
+                    {
+                        _packet.Write(Server.clients[Server.clients[_toClient].player.currentLobby.game.currentPlayerID].player.username);
+                    }
+                    
+                }
                 SendTCPData(_toClient, _packet);
             }
         }
@@ -359,24 +371,60 @@ namespace Narde_Server
                 {
                    int moveTempStart = move.StartingPoint;
                    int moveTempTarget = move.TargetPoint;
-                   /*if(Server.clients[_toClient].player.currentStatus == PlayerStatus.Spectator)
+                   if(Server.clients[_toClient].player.currentStatus == PlayerStatus.Spectator)
                    {
                         if(Server.clients[_toClient].player.currentLobby.game.currentPlayerID == Server.clients[_toClient].player.currentLobby.game.player1ID)
                         {
                             moveTempStart = (moveTempStart + 12) % 24;
-                            moveTempTarget = (moveTempTarget + 12) % 24;
-                        }
-                   }else*/
-                   if(Server.clients[_toClient].player.currentStatus == PlayerStatus.Player && turn)
-                   {
-                        if(Server.clients[_toClient].player.currentLobby.game.currentPlayerID == Server.clients[_toClient].player.currentLobby.game.player2ID)
-                        {
-                            moveTempStart = (moveTempStart + 12) % 24;
-                            moveTempTarget = (moveTempTarget + 12) % 24;
+                            if(moveTempTarget != 24)
+                            {
+                                moveTempTarget = (moveTempTarget + 12) % 24;
+                            }
                         }
                    }
+                   if(Server.clients[_toClient].player.currentLobby.type == LobbyType.PvP)
+                   {
+                        if(Server.clients[_toClient].player.currentStatus == PlayerStatus.Player && turn)
+                        {
+                            if(Server.clients[_toClient].player.currentLobby.game.currentPlayerID == Server.clients[_toClient].player.currentLobby.game.player2ID)
+                            {
+                                moveTempStart = (moveTempStart + 12) % 24;
+                                if(moveTempTarget != 24)
+                                {
+                                    moveTempTarget = (moveTempTarget + 12) % 24;
+                                }
+                            }
+                        }
+                   }
+                   else if(Server.clients[_toClient].player.currentLobby.type == LobbyType.PvAI)
+                    {
+                        if(Server.clients[_toClient].player.currentStatus == PlayerStatus.Player)
+                        {
+                            if(Server.clients[_toClient].player.currentLobby.game.currentPlayerID == Server.clients[_toClient].player.currentLobby.game.player2ID)
+                            {
+                                moveTempStart = (moveTempStart + 12) % 24;
+                                if(moveTempTarget != 24)
+                                {
+                                    moveTempTarget = (moveTempTarget + 12) % 24;
+                                }
+                                
+                            }
+                        }
+                    }
                     _packet.Write(moveTempStart);
                     _packet.Write(moveTempTarget);
+                }
+                if(Server.clients[_toClient].player.currentStatus == PlayerStatus.Spectator)
+                {
+                    if(Server.clients[_toClient].player.currentLobby.type == LobbyType.PvAI && Server.clients[_toClient].player.currentLobby.game.currentPlayerID == -1)
+                    {
+                        _packet.Write("AI");
+                    }
+                    else
+                    {
+                        _packet.Write(Server.clients[Server.clients[_toClient].player.currentLobby.game.currentPlayerID].player.username);
+                    }
+                    
                 }
                 SendTCPData(_toClient, _packet);
             }

@@ -29,7 +29,8 @@ namespace Narde_Server
         joinLobby = 5,
         startGame = 6,
         surrender = 7,
-        endTurn = 8
+        endTurn = 8,
+        endTurnAI = 9
     }
 
     public class Packet : IDisposable

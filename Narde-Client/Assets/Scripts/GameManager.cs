@@ -37,11 +37,14 @@ public class GameManager : MonoBehaviour
     public Dice die2;
     public Remover remover;
     public Button endTurnButton;
+    public Button surrenderButton;
+    public Button stopSpectatingButton;
     public TMP_Text endturnButtonText;
     public CanvasGroup board;
     public CanvasGroup UI;
     public GameObject EndPanel;
     public TMP_Text WinnerText;
+    public TMP_Text TurnText;
     public List<Point> Points; // Assign the transform of each Point point in the editor
     public List<int> startingCheckersCountPlayer; // Number of Player 1 checkers at each Point point at the start
     public List<int> startingCheckersCountEnemy; // Number of Player 2 checkers at each Point point at the start
@@ -54,11 +57,11 @@ public class GameManager : MonoBehaviour
     private bool firstTurnOfTheGame = true;
     private int moveOfTheHeadCount = 0;
     private int moveOfTheHeadLimit = 1;
-    
+    private bool highestDiePossible = false;
     private int moveNr = 1;
     private int maxMovesPossible = 0;
     private MoveOption lastMoveDone;
-    
+    public Agent agent;
     bool removalStage = false;
     void Awake()
     {
@@ -79,7 +82,22 @@ public class GameManager : MonoBehaviour
         if(Client.instance.player.currentStatus == PlayerStatus.Spectator)
         {
             endTurnButton.gameObject.SetActive(false);
-           // die1.DisableDice();
+            surrenderButton.gameObject.SetActive(false);
+            stopSpectatingButton.gameObject.SetActive(true);
+            die1.DisableDice();
+        }
+        else
+        {
+            SwitchTurnText(Client.instance.player.turn);
+        }
+        if(Client.instance.player.lobby.GetLobbyType().Equals("PvAI"))
+        {
+            agent = new();
+            if(!Client.instance.player.turn)
+            {
+                agent.SetDice(Client.instance.player.dice1, Client.instance.player.dice2);
+                WaitForAIToStartCalc();
+            }
         }
     }
 
@@ -134,7 +152,7 @@ public class GameManager : MonoBehaviour
                     
                     if(point.CanRemoveChecker() && !removalStage)
                     {
-                        removalStage = AreAllCheckersInLastSix();
+                        removalStage = AreAllCheckersInLastSix(Points, playerColor);
                     }
 
                     for(int i = 0; i < UsedDice.Count; i++)
@@ -238,9 +256,9 @@ public class GameManager : MonoBehaviour
         }
         
     }
-    private void CalculateAllowedMoves(List<Point> copiedPoints, int dice1uses, int dice2uses, bool simRemovalStage, int CalculateHeadMoveCount = 0, int CalculateHeadMoveLimit = 1, MoveOption moveCalculated = null)
+    private void CalculateAllowedMoves(List<Point> copiedPoints, Checker.CheckerColor _playerColor, Checker.CheckerColor _enemyColor, int dice1uses, int dice2uses, bool simRemovalStage, int CalculateHeadMoveCount = 0, int CalculateHeadMoveLimit = 1, MoveOption moveCalculated = null)
     {
-        List<MoveOption> possibleMoves = new List<MoveOption>();
+        List<MoveOption> possibleMoves = new();
         bool allMovesPossible = false;
         if(firstTurnOfTheGame && diceRollResult1 == diceRollResult2 && (diceRollResult1 == 3 || diceRollResult1 == 4 || diceRollResult1 == 6)) CalculateHeadMoveLimit = 2;
         if(dice1uses == 0 && dice2uses == 0)
@@ -250,27 +268,29 @@ public class GameManager : MonoBehaviour
         foreach (var point in copiedPoints)
         {
             //Debug.Log(copiedPoints.IndexOf(point));
-            if(point.HasCheckers() && point.ContainsCheckerColor(playerColor))
+            if(point.HasCheckers() && point.ContainsCheckerColor(_playerColor))
             {   
                 
                 //Debug.Log(copiedPoints.IndexOf(point));
                 if(point == copiedPoints[0] && CalculateHeadMoveCount == CalculateHeadMoveLimit) continue;   
                     bool dieMove1Possible = false;
                     bool dieMove2Possible = false;
-                    if(dice1uses > 0) dieMove1Possible = CalculatetMoveOptions(possibleMoves, point, diceRollResult1, new List<int> { 1 }, dice1uses, dice2uses, simRemovalStage, moveCalculated);
-                    if(dice2uses > 0) dieMove2Possible = CalculatetMoveOptions(possibleMoves, point, diceRollResult2, new List<int> { 2 }, dice1uses, dice2uses, simRemovalStage, moveCalculated);
-
+                    if(dice1uses > 0) dieMove1Possible = CalculatetMoveOptions(copiedPoints, _playerColor, _enemyColor, possibleMoves, point, diceRollResult1, new List<int> { 1 }, dice1uses, dice2uses, simRemovalStage, moveCalculated);
+                    if(dice2uses > 0) dieMove2Possible = CalculatetMoveOptions(copiedPoints, _playerColor, _enemyColor, possibleMoves, point, diceRollResult2, new List<int> { 2 }, dice1uses, dice2uses, simRemovalStage, moveCalculated);
+                    if(diceRollResult1 >= diceRollResult2 && dieMove1Possible && !highestDiePossible) highestDiePossible = true;
+                    else if(diceRollResult2 >= diceRollResult1  && dieMove2Possible && !highestDiePossible) highestDiePossible = true;
+                    
                     if(dieMove1Possible || dieMove2Possible)
                     {
                         if(dice1uses > 0 && dice2uses > 0)
                         {
                             if(!dieMove1Possible && dieMove2Possible)
                             {
-                                CalculatetMoveOptions(possibleMoves, point, diceRollResult1+diceRollResult2, new List<int> { 2,1 }, dice1uses, dice2uses, simRemovalStage,moveCalculated);
+                                CalculatetMoveOptions(copiedPoints, _playerColor, _enemyColor, possibleMoves, point, diceRollResult1+diceRollResult2, new List<int> { 2,1 }, dice1uses, dice2uses, simRemovalStage,moveCalculated);
                             }
                             else
                             {
-                                CalculatetMoveOptions(possibleMoves, point, diceRollResult1+diceRollResult2, new List<int> { 1,2 }, dice1uses, dice2uses, simRemovalStage,moveCalculated);
+                                CalculatetMoveOptions(copiedPoints,_playerColor, _enemyColor, possibleMoves, point, diceRollResult1+diceRollResult2, new List<int> { 1,2 }, dice1uses, dice2uses, simRemovalStage,moveCalculated);
                             }
                             
                         }
@@ -284,7 +304,7 @@ public class GameManager : MonoBehaviour
                                 if(!dieMove1Possible) break;
                                 list = Enumerable.Repeat(1, i).ToList();
                                 
-                                dieMove1Possible = CalculatetMoveOptions(possibleMoves, point, diceRollResult1 * i, list, dice1uses, dice2uses, simRemovalStage, moveCalculated);
+                                dieMove1Possible = CalculatetMoveOptions(copiedPoints, _playerColor, _enemyColor, possibleMoves, point, diceRollResult1 * i, list, dice1uses, dice2uses, simRemovalStage, moveCalculated);
                             }
                         }
                     } 
@@ -327,7 +347,7 @@ public class GameManager : MonoBehaviour
             else if(move.TargetPoint == null)
             {
                 GameObject checker = move.StartingPoint.SimulateRemoveTopChecker();
-                CalculateAllowedMoves(copiedPoints, tempDice1Uses, tempDice2Uses, removalStageTemp, calculateHeadMoveCountTemp, CalculateHeadMoveLimit, move);
+                CalculateAllowedMoves(copiedPoints, _playerColor, _enemyColor, tempDice1Uses, tempDice2Uses, removalStageTemp, calculateHeadMoveCountTemp, CalculateHeadMoveLimit, move);
                 
                 if (move.usesAllDice)
                 {
@@ -345,10 +365,10 @@ public class GameManager : MonoBehaviour
                 }
                 if(move.TargetPoint.CanRemoveChecker() && !removalStageTemp)
                     {
-                        removalStageTemp = AreAllCheckersInLastSix();
+                        removalStageTemp = AreAllCheckersInLastSix(copiedPoints, _playerColor);
                     }
 
-                CalculateAllowedMoves(copiedPoints, tempDice1Uses, tempDice2Uses, removalStageTemp,calculateHeadMoveCountTemp, CalculateHeadMoveLimit, move);
+                CalculateAllowedMoves(copiedPoints, _playerColor, _enemyColor, tempDice1Uses, tempDice2Uses, removalStageTemp,calculateHeadMoveCountTemp, CalculateHeadMoveLimit, move);
                 
                 if (move.usesAllDice)
                 {
@@ -358,16 +378,16 @@ public class GameManager : MonoBehaviour
                 SimulateMoveChecker(move.TargetPoint, move.StartingPoint); 
             }
             
-            int startIndex = Points.IndexOf(move.StartingPoint);
+            int startIndex = copiedPoints.IndexOf(move.StartingPoint);
             
             
-            Points[startIndex].possibleMoves.Add(move);
+            copiedPoints[startIndex].possibleMoves.Add(move);
         }
         
         if(moveCalculated == null)
         {
             int currentMaxMoves = 0;
-            foreach(var point in Points)
+            foreach(var point in copiedPoints)
             {   
 
                 if(allMovesPossible)
@@ -376,11 +396,11 @@ public class GameManager : MonoBehaviour
                 }
                 else
                 {   
-                    if(diceRollResult1 >= diceRollResult2)
+                    if(diceRollResult1 >= diceRollResult2 && highestDiePossible)
                     {
                         point.possibleMoves.RemoveAll(move => move.DiceUsed[0] != 1);
                     }
-                    else
+                    else if(highestDiePossible)
                     {
                         point.possibleMoves.RemoveAll(move => move.DiceUsed[0] != 2);
                     }
@@ -392,31 +412,31 @@ public class GameManager : MonoBehaviour
                 }
             }
             maxMovesPossible = currentMaxMoves;
-            if(maxMovesPossible == 0) MakeButtonInteractable(true);
+            if(maxMovesPossible == 0 && Client.instance.player.turn) MakeButtonInteractable(true);
         }
     
         
     }
 
-    private bool CalculatetMoveOptions(List<MoveOption> possibleMoves, Point startPoint, int moveDistance, List<int> diceUsed,  int dice1uses, int dice2uses, bool simRemovalStage, MoveOption prevMove = null)
+    private bool CalculatetMoveOptions(List<Point> copiedPoints, Checker.CheckerColor _playerColor, Checker.CheckerColor _enemyColor, List<MoveOption> possibleMoves, Point startPoint, int moveDistance, List<int> diceUsed,  int dice1uses, int dice2uses, bool simRemovalStage, MoveOption prevMove = null)
     {
         
-        int startIndex = Points.IndexOf(startPoint);
+        int startIndex = copiedPoints.IndexOf(startPoint);
 
         if(simRemovalStage && startPoint.CanRemoveChecker() && diceUsed.Count == 1)
         {
             if(24 - startIndex == moveDistance)
             {
                 //Debug.Log("Remove move added for startIndex:" + startIndex);
-                MoveOption newMoveOption = new MoveOption(startPoint, null, diceUsed, diceUseCount1 + diceUseCount2 - dice1uses - dice2uses + 1, prevMove);
+                MoveOption newMoveOption = new(startPoint, null, diceUsed, diceUseCount1 + diceUseCount2 - dice1uses - dice2uses + 1, prevMove);
                 possibleMoves.Add(newMoveOption);
             }
             else if( 24 - startIndex < moveDistance)
             {
                 bool previousAreEmpty = true;
-                for(int i = startIndex-1; i >= Points.Count - 6; i--)
+                for(int i = startIndex-1; i >= copiedPoints.Count - 6; i--)
                 {
-                    if(Points[i].HasCheckers() && Points[i].ContainsCheckerColor(Checker.CheckerColor.Player)) 
+                    if(copiedPoints[i].HasCheckers() && copiedPoints[i].ContainsCheckerColor(_playerColor)) 
                     {
                         previousAreEmpty = false;
                         break;
@@ -424,18 +444,18 @@ public class GameManager : MonoBehaviour
                 }
                 if(previousAreEmpty)
                 {
-                    MoveOption newMoveOption = new MoveOption(startPoint, null, diceUsed, diceUseCount1 + diceUseCount2 - dice1uses - dice2uses + 1, prevMove);
+                    MoveOption newMoveOption = new(startPoint, null, diceUsed, diceUseCount1 + diceUseCount2 - dice1uses - dice2uses + 1, prevMove);
                     possibleMoves.Add(newMoveOption);
                 }
             }
         }
         
         int targetIndex = startIndex + moveDistance; // Assuming a circular board
-        if(targetIndex > Points.Count -1) return false;
-        Point targetPoint = Points[targetIndex];
+        if(targetIndex > copiedPoints.Count -1) return false;
+        Point targetPoint = copiedPoints[targetIndex];
         
         // Check if the target point is open and intermediate points are open if needed
-        if (IsMoveValid(startPoint, targetPoint))
+        if (IsMoveValid(startPoint, targetPoint, copiedPoints, _playerColor, _enemyColor))
         {   
             AddMoveOption(possibleMoves, startPoint, targetPoint, diceUsed, diceUseCount1 + diceUseCount2 - dice1uses - dice2uses + 1, prevMove);
             //MoveOption newMoveOption = new MoveOption(startPoint, targetPoint, diceUsed, 1);
@@ -448,7 +468,7 @@ public class GameManager : MonoBehaviour
 
     void AddMoveOption(List<MoveOption> possibleMoves, Point startPoint, Point targetPoint, List<int> diceUsed, int turnNumber, MoveOption prevMove = null) {
         
-        MoveOption newMoveOption = new MoveOption(startPoint, targetPoint, diceUsed, turnNumber, prevMove);
+        MoveOption newMoveOption = new(startPoint, targetPoint, diceUsed, turnNumber, prevMove);
         possibleMoves.Add(newMoveOption);
     }
 
@@ -456,33 +476,33 @@ public class GameManager : MonoBehaviour
         return currentPoint.possibleMoves.FirstOrDefault(move => move.TargetPoint == targetPoint && move.PrevMove == lastMoveDone);
     }
 
-    bool IsMoveValid(Point startPoint, Point targetPoint)
+    bool IsMoveValid(Point startPoint, Point targetPoint, List<Point> copiedPoints, Checker.CheckerColor _playerColor, Checker.CheckerColor _enemyColor)
     {
         // Implement logic to check if a move is valid based on Narde rules
         // This includes checking if the target point is open and if intermediate points are open
 
-        if(targetPoint.ContainsCheckerColor(Checker.CheckerColor.Enemy))
+        if(targetPoint.ContainsCheckerColor(_enemyColor))
         {
             return false;
         }
-        if (CreatesRowOfSix(startPoint, targetPoint)) {
+        if (CreatesRowOfSix(copiedPoints, startPoint, targetPoint, _playerColor, _enemyColor)) {
             // Check if there's an opponent's checker past the target point
             
-            if (!HasOpponentsCheckerPast(targetPoint)) {
+            if (!HasOpponentsCheckerPast(copiedPoints, targetPoint, _playerColor, _enemyColor)) {
                 return false; // Invalidate move if no opponent's checker is past the row of 6
             }
         }
         return true; // Placeholder return
     }
 
-    bool CreatesRowOfSix(Point startPoint,Point targetPoint) 
+    bool CreatesRowOfSix(List<Point> copiedPoints, Point startPoint, Point targetPoint, Checker.CheckerColor _playerColor, Checker.CheckerColor _enemyColor) 
     {
         // logic to check if placing a checker on targetPoint would create a row of 6
         int rowLengthCount = 1;
-        int startIndex = Points.IndexOf(startPoint);
+        int startIndex = copiedPoints.IndexOf(startPoint);
         bool checkRight = true;
         bool checkLeft = true;
-        int leftindex = Points.IndexOf(targetPoint);
+        int leftindex = copiedPoints.IndexOf(targetPoint);
         int rightindex = leftindex;
         while((checkRight || checkLeft) && rowLengthCount < 6)
         {
@@ -493,7 +513,7 @@ public class GameManager : MonoBehaviour
                 {
                     rightindex = 23;
                 }
-                if(Points[rightindex].HasCheckers() && Points[rightindex].ContainsCheckerColor(playerColor))
+                if(copiedPoints[rightindex].HasCheckers() && copiedPoints[rightindex].ContainsCheckerColor(_playerColor))
                 {   
                     if(rightindex != startIndex ||(rightindex == startIndex && startPoint.checkersStack.Count > 1))
                     {
@@ -514,9 +534,9 @@ public class GameManager : MonoBehaviour
                 {
                     leftindex = 0;
                 }
-                if(Points[leftindex].HasCheckers() && Points[leftindex].ContainsCheckerColor(playerColor))
+                if(copiedPoints[leftindex].HasCheckers() && copiedPoints[leftindex].ContainsCheckerColor(_playerColor))
                 {
-                    if(Points[leftindex] != startPoint || (leftindex == startIndex && startPoint.checkersStack.Count > 1))
+                    if(copiedPoints[leftindex] != startPoint || (leftindex == startIndex && startPoint.checkersStack.Count > 1))
                     {
                         rowLengthCount += 1;
                     }
@@ -528,19 +548,19 @@ public class GameManager : MonoBehaviour
                 else checkLeft = false;   
             }
         }
-        if(rowLengthCount == 6) return true;
+        if(rowLengthCount >= 6) return true;
         return false;
     }
 
-    bool HasOpponentsCheckerPast(Point targetPoint) 
+    bool HasOpponentsCheckerPast(List<Point> copiedPoints, Point targetPoint, Checker.CheckerColor _playerColor, Checker.CheckerColor _enemyColor) 
     {
         // logic to check for an opponent's checker past the targetPoint
-        int targetIndex = Points.IndexOf(targetPoint);
+        int targetIndex = copiedPoints.IndexOf(targetPoint);
 
         int checkedIndex = 11;
         while(targetIndex != checkedIndex)
         {
-            if(Points[checkedIndex].ContainsCheckerColor(Checker.CheckerColor.Enemy))
+            if(copiedPoints[checkedIndex].ContainsCheckerColor(_enemyColor))
             {
                 return true;
             }
@@ -559,18 +579,18 @@ public class GameManager : MonoBehaviour
         remover.SetRemovalAllowed(false);
     }
 
-    public bool AreAllCheckersInLastSix()
+    public bool AreAllCheckersInLastSix(List<Point> copiedPoints, Checker.CheckerColor _player)
     {
-        int lastIndex = Points.Count - 1;
+        int lastIndex = copiedPoints.Count - 1;
         int countCheckersInLastSix = 0;
         int totalPlayerCheckers = 0;
 
         for (int i = lastIndex; i > lastIndex - 6; i--)
         {
-            foreach (var checker in Points[i].checkersStack)
+            foreach (var checker in copiedPoints[i].checkersStack)
             {
                 Checker checkerScript = checker.GetComponent<Checker>();
-                if (checkerScript != null && checkerScript.checkerColor == playerColor)
+                if (checkerScript != null && checkerScript.checkerColor == _player)
                 {
                     countCheckersInLastSix++;
                 }
@@ -578,12 +598,12 @@ public class GameManager : MonoBehaviour
         }
 
         // Count total checkers of the player on the board
-        foreach (var point in Points)
+        foreach (var point in copiedPoints)
         {
             foreach (var checker in point.checkersStack)
             {
                 Checker checkerScript = checker.GetComponent<Checker>();
-                if (checkerScript != null && checkerScript.checkerColor == playerColor)
+                if (checkerScript != null && checkerScript.checkerColor == _player)
                 {
                     totalPlayerCheckers++;
                 }
@@ -598,6 +618,7 @@ public class GameManager : MonoBehaviour
         if (selectedPoint != null && selectedPoint.HasCheckers())
         {
             lastMoveDone = selectedPoint.possibleMoves.FirstOrDefault(move => move.TargetPoint == null && move.PrevMove == lastMoveDone);
+            MovesDone.Add(lastMoveDone);
             List<int> UsedDice = lastMoveDone.DiceUsed;
             moveNr += UsedDice.Count;
             for(int i = 0; i < UsedDice.Count; i++)
@@ -613,6 +634,7 @@ public class GameManager : MonoBehaviour
                 checkerComponent.MakeCheckerInvisible();
                 
                 selectedPoint = null;
+                if(moveNr == maxMovesPossible + 1) MakeButtonInteractable(true);
                 UnhighlightAllPoints();
                 
             }
@@ -659,7 +681,7 @@ public class GameManager : MonoBehaviour
         
         die1.DisableDice();
         MovesDone = new();
-        CalculateAllowedMoves(Points, diceUseCount1, diceUseCount2, removalStage);
+        CalculateAllowedMoves(Points, Checker.CheckerColor.Player, Checker.CheckerColor.Enemy, diceUseCount1, diceUseCount2, removalStage);
         diceRolled = true;
     }
     public void DisableDice()
@@ -697,6 +719,7 @@ public class GameManager : MonoBehaviour
         lastMoveDone = null;
         firstTurnOfTheGame =false;
         diceRolled = false;
+        highestDiePossible =false;
         MakeButtonInteractable(false);
         //die1.EnableDice();
         ClientSend.EndTurn(diceRollResult1, diceRollResult2);
@@ -713,6 +736,21 @@ public class GameManager : MonoBehaviour
         UI.interactable = false;
         board.interactable = false;
         ClientSend.Surrender();
+    }
+
+    public void StopSpectating()
+    {
+        UI.interactable = false;
+        board.interactable = false;
+        
+        ClientSend.LeaveLobby();
+        Client.instance.player.lobby = null;
+        Client.instance.player.lobby.SetStatus(GameState.Menu);
+        Client.instance.player.dice1 = 0;
+        Client.instance.player.dice2 = 0;
+        Client.instance.player.currentPlayerName = null;
+        SceneManager.LoadScene("Main");
+        
     }
 
     public void FinishGame(string WinnerName)
@@ -737,16 +775,76 @@ public class GameManager : MonoBehaviour
         Client.instance.player.lobby.SetStatus(GameState.Menu);
     }
 
-    public void UpdateBoard(int start, int end)
+    public void UpdateBoard(List<List<int>> moves)
     {
-        if(end != 24)
+        StartCoroutine(UpdateMovesSequence(moves, 1f, UpdateUI));
+    }
+    IEnumerator UpdateMovesSequence(List<List<int>> moves, float delayBetweenMoves, Action onComplete)
+    {
+        foreach (var move in moves)
         {
-            MoveChecker(Points[start], Points[end]);
+            if(move[1] != 24)
+            {
+                MoveChecker(Points[move[0]], Points[move[1]]);
+            }
+            else
+            {
+                RemoveChecker(Points[move[0]]);
+            }
+            yield return new WaitForSeconds(delayBetweenMoves); // Wait before proceeding to the next move
+        }
+        onComplete?.Invoke();
+    }
+    public void UpdateUI()
+    {
+
+        SwitchTurnText(Client.instance.player.turn);
+        
+        if(Client.instance.player.turn)
+        {
+            EnableDice();
+            die1.Reset();
+            SetFinaleDice(Client.instance.player.dice1, Client.instance.player.dice2);
         }
         else
         {
-            RemoveChecker(Points[start]);
+            DisableDice();
+            die1.Reset();
+            SetFinaleDice(Client.instance.player.dice1, Client.instance.player.dice2);
+            RollDice();
         }
-    }   
+    }
+    IEnumerator StartAICalculationWithDelay(float delayInSeconds)
+    {
+        yield return new WaitForSeconds(delayInSeconds); // Wait for the specified delay
+        agent.MakeMove();
+    }
+    public void WaitForAIToStartCalc()
+    {
+        StartCoroutine(StartAICalculationWithDelay(2f));
+        
+    }
+    public void SwitchTurnText(bool turn)
+    {
+        if(Client.instance.player.currentStatus == PlayerStatus.Player)
+        {
+            if(turn)
+            {
+                TurnText.text = "Your turn";
+                TurnText.color = new Color32(131, 224, 85, 255);
+            }
+            else
+            {
+                TurnText.text = "Opponent's turn";
+                TurnText.color = new Color32(243, 211, 58, 255);
+            }
+        }
+        else if(Client.instance.player.currentStatus == PlayerStatus.Spectator)
+        {
+            TurnText.text = Client.instance.player.currentPlayerName + "'s turn";
+            TurnText.color = new Color32(243, 211, 58, 255);
+        }
+        
+    }
 }
 

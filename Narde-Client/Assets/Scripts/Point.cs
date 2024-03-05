@@ -149,7 +149,7 @@ public class Point : MonoBehaviour
         return gameObject.tag == "RemovePoint"; // Replace with actual logic
     }
 
-    public GameObject RemoveChecker()
+    /*public GameObject RemoveChecker()
     {
         if (CanRemoveChecker() && HasCheckers())
         {
@@ -166,4 +166,5 @@ public class Point : MonoBehaviour
         this.pointType = otherpoint.pointType;
         this.checkersStack = otherpoint.checkersStack;
     }
+    */
 }

@@ -30,7 +30,8 @@ using UnityEngine;
         joinLobby = 5,
         startGame = 6,
         surrender = 7,
-        endTurn = 8
+        endTurn = 8,
+        AIEndTurn = 9
     }
 
     public class Packet : IDisposable

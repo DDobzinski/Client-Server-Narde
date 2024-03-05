@@ -45,7 +45,7 @@ public class UIManager : MonoBehaviour
             instance.startMenu.SetActive(false);
             instance.connectionPanel.SetActive(false);
             instance.mainMenu.SetActive(true);
-            if(Client.instance.player != null)
+            if(Client.instance.player.lobby != null)
             {
                 mainLayout.SetActive(false);
                 createLayout.SetActive(false);

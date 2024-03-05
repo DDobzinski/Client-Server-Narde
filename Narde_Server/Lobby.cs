@@ -69,7 +69,7 @@ namespace Narde_Server
         {
             PlayerClients.Remove(player);
             player.player.LeaveLobby();
-            if(type != LobbyType.PvP && gameState == GameState.InGame)
+            if(type == LobbyType.PvP && gameState == GameState.InGame)
             {
                 
                 ServerSend.EndGame(PlayerClients[0].id, PlayerClients[0].player.username);
@@ -78,6 +78,13 @@ namespace Narde_Server
                 foreach(var client in SpectatorClients)
                 {
                     ServerSend.EndGame(client.id, PlayerClients[0].player.username);
+                }
+            }
+            else if(type == LobbyType.PvAI && gameState == GameState.InGame)
+            {
+                foreach(var client in SpectatorClients)
+                {
+                    ServerSend.EndGame(client.id, "AI");
                 }
             }
             if(status == LobbyStatus.SpectatorsOnly)

@@ -219,11 +219,24 @@ namespace Narde_Server
                             }
                             else
                             {
-                                lobby.game = new Game(lobby.PlayerClients[0].id, lobby.PlayerClients[1].id, playDiceRoll1, playDiceRoll2, lobby.PlayerClients[1].id);
+                                lobby.game = new Game(lobby.PlayerClients[1].id, lobby.PlayerClients[0].id, playDiceRoll1, playDiceRoll2, lobby.PlayerClients[1].id);
                                 ServerSend.AllowGame(lobby.PlayerClients[0].id, false, playDiceRoll1, playDiceRoll2);
                                 ServerSend.AllowGame(lobby.PlayerClients[1].id, true, playDiceRoll1, playDiceRoll2);
                             }
                             
+                        }
+                        else if(lobby.type == LobbyType.PvAI)
+                        {
+                            if(diceRoll1 > diceRoll2)
+                            {
+                                lobby.game = new Game(lobby.PlayerClients[0].id, -1, playDiceRoll1, playDiceRoll2, lobby.PlayerClients[0].id);
+                                ServerSend.AllowGame(lobby.PlayerClients[0].id, true, playDiceRoll1, playDiceRoll2);
+                            }
+                            else
+                            {
+                                lobby.game = new Game(-1, lobby.PlayerClients[0].id, playDiceRoll1, playDiceRoll2, -1);
+                                ServerSend.AllowGame(lobby.PlayerClients[0].id, false, playDiceRoll1, playDiceRoll2);
+                            }
                         }
 
                         foreach(var client in lobby.SpectatorClients)
@@ -305,6 +318,7 @@ namespace Narde_Server
         public static void PlayerEndTurn(int _fromClient, Packet _packet)
         {
             int _id = _packet.ReadInt();
+            Console.WriteLine("EndTurn");
             if(_id == _fromClient)
             {
                 Lobby lobby = Server.clients[_fromClient].player.currentLobby;
@@ -312,17 +326,18 @@ namespace Narde_Server
 
                 if(player.currentStatus == PlayerStatus.Player)
                 {
-                    if(lobby.gameState == GameState.InGame && lobby.game.currentPlayerID == _fromClient)
+                    if(lobby.gameState == GameState.InGame && (lobby.game.currentPlayerID == _fromClient || lobby.type == LobbyType.PvAI && (_fromClient == lobby.game.player1ID || _fromClient == lobby.game.player2ID)))
                     {
-                        Console.WriteLine($"End Turn Received!");
+                        
                         int moveCount = _packet.ReadInt();
+                        
                         List<Move> moves = new();
                         for(int i = 0; i < moveCount; i++)
                         {
                             int startPointID = _packet.ReadInt();
                             int targetPointID = _packet.ReadInt();
                             int diceCount = _packet.ReadInt();
-
+                            
                             List<int> DiceUsed = new();
                             for(int j = 0; j < diceCount; j++)
                             {
@@ -330,7 +345,7 @@ namespace Narde_Server
                             }
                             moves.Add(new(startPointID, targetPointID, DiceUsed));
                         }
-                        Console.WriteLine($"End Turn Received! Start {moves[0].StartingPoint} End {moves[0].TargetPoint}");
+                        
                         bool valid = Server.clients[_fromClient].player.currentLobby.game.ValidateTurn(moves);
                         if(valid)
                         {
@@ -338,9 +353,23 @@ namespace Narde_Server
 
                             if(playerWon == 1)
                             {
-                                foreach(var client in lobby.PlayerClients)
+                                if(lobby.type == LobbyType.PvP)
                                 {
-                                    ServerSend.EndGame(client.id,  Server.clients[Server.clients[_fromClient].player.currentLobby.game.player1ID].player.username);
+                                    foreach(var client in lobby.PlayerClients)
+                                    {
+                                        ServerSend.EndGame(client.id,  Server.clients[Server.clients[_fromClient].player.currentLobby.game.player1ID].player.username);
+                                    }
+                                }
+                                else if(lobby.type == LobbyType.PvAI)
+                                {
+                                    if(lobby.game.player1ID == -1)
+                                    {
+                                        ServerSend.EndGame(lobby.PlayerClients[0].id, "AI");
+                                    }
+                                    else
+                                    {
+                                        ServerSend.EndGame(lobby.PlayerClients[0].id, lobby.PlayerClients[0].player.username);
+                                    }
                                 }
 
                                 foreach(var client in lobby.SpectatorClients)
@@ -350,10 +379,25 @@ namespace Narde_Server
                             }
                             else if(playerWon == 2)
                             {
-                                foreach(var client in lobby.PlayerClients)
+                                if(lobby.type == LobbyType.PvP)
                                 {
-                                    ServerSend.EndGame(client.id, Server.clients[Server.clients[_fromClient].player.currentLobby.game.player2ID].player.username);
+                                    foreach(var client in lobby.PlayerClients)
+                                    {
+                                        ServerSend.EndGame(client.id, Server.clients[Server.clients[_fromClient].player.currentLobby.game.player2ID].player.username);
+                                    }
                                 }
+                                else if(lobby.type == LobbyType.PvAI)
+                                {
+                                    if(lobby.game.player2ID == -1)
+                                    {
+                                        ServerSend.EndGame(lobby.PlayerClients[0].id, "AI");
+                                    }
+                                    else
+                                    {
+                                        ServerSend.EndGame(lobby.PlayerClients[0].id, lobby.PlayerClients[0].player.username);
+                                    }
+                                }
+                                
 
                                 foreach(var client in lobby.SpectatorClients)
                                 {
@@ -362,18 +406,170 @@ namespace Narde_Server
                             }
                             else
                             {
-
-                                foreach(var client in lobby.PlayerClients)
+                                if(lobby.type == LobbyType.PvP)
                                 {
-                                    if(client.id == lobby.game.currentPlayerID)
+                                    foreach(var client in lobby.PlayerClients)
                                     {
-                                        ServerSend.UpdateGame(client.id, true, lobby.game.diceResult1, lobby.game.diceResult2, moves);
+                                        if(client.id == lobby.game.currentPlayerID)
+                                        {
+                                            ServerSend.UpdateGame(client.id, true, lobby.game.diceResult1, lobby.game.diceResult2, moves);
+                                        }
+                                        else
+                                        {
+                                            ServerSend.UpdateGame(client.id, false, lobby.game.diceResult1, lobby.game.diceResult2, moves);
+                                        }
+                                    }
+                                }
+                                else if(lobby.type == LobbyType.PvAI)
+                                {
+                                    if(lobby.game.currentPlayerID == -1)
+                                    {
+                                        ServerSend.UpdateGame(lobby.PlayerClients[0].id, false, lobby.game.diceResult1, lobby.game.diceResult2, moves);
                                     }
                                     else
                                     {
-                                        ServerSend.UpdateGame(client.id, false, lobby.game.diceResult1, lobby.game.diceResult2, moves);
+                                        ServerSend.UpdateGame(lobby.PlayerClients[0].id, true, lobby.game.diceResult1, lobby.game.diceResult2, moves);
                                     }
                                 }
+                                
+
+                                foreach(var client in lobby.SpectatorClients)
+                                {
+                                    ServerSend.UpdateGame(client.id, false, lobby.game.diceResult1, lobby.game.diceResult2, moves);
+                                }
+                            }
+                        }
+                    }
+                    //Deny if lobby not ready
+                }
+            }
+            else
+            {
+                Console.WriteLine($"ID: {_fromClient}) has assumed the wrong client ID ({_id})!");
+            }
+            //Console.WriteLine($"{Server.clients[_fromClient].tcp.socket.Client.RemoteEndPoint} connected and is now player {_fromClient}.");
+            
+            
+            //Server.clients[_fromClient].player = new Player(_fromClient, _username);
+        }
+
+        public static void AIEndTurn(int _fromClient, Packet _packet)
+        {
+            int _id = _packet.ReadInt();
+            Console.WriteLine("EndTurn");
+            if(_id == _fromClient)
+            {
+                Lobby lobby = Server.clients[_fromClient].player.currentLobby;
+                Player player = Server.clients[_fromClient].player;
+
+                if(player.currentStatus == PlayerStatus.Player)
+                {
+                    if(lobby.gameState == GameState.InGame && (lobby.game.currentPlayerID == _fromClient || lobby.type == LobbyType.PvAI && (_fromClient == lobby.game.player1ID || _fromClient == lobby.game.player2ID)))
+                    {
+                        
+                        int moveCount = _packet.ReadInt();
+                        
+                        List<Move> moves = new();
+                        for(int i = 0; i < moveCount; i++)
+                        {
+                            int startPointID = _packet.ReadInt();
+                            int targetPointID = _packet.ReadInt();
+                            int diceCount = _packet.ReadInt();
+                            
+                            List<int> DiceUsed = new();
+                            for(int j = 0; j < diceCount; j++)
+                            {
+                                DiceUsed.Add(_packet.ReadInt());
+                            }
+                            moves.Add(new(startPointID, targetPointID, DiceUsed));
+                        }
+                        
+                        bool valid = Server.clients[_fromClient].player.currentLobby.game.ValidateTurn(moves);
+                        if(valid)
+                        {
+                            int playerWon = Server.clients[_fromClient].player.currentLobby.game.CheckForWin();
+
+                            if(playerWon == 1)
+                            {
+                                if(lobby.type == LobbyType.PvP)
+                                {
+                                    foreach(var client in lobby.PlayerClients)
+                                    {
+                                        ServerSend.EndGame(client.id,  Server.clients[Server.clients[_fromClient].player.currentLobby.game.player1ID].player.username);
+                                    }
+                                }
+                                else if(lobby.type == LobbyType.PvAI)
+                                {
+                                    if(lobby.game.player1ID == -1)
+                                    {
+                                        ServerSend.EndGame(lobby.PlayerClients[0].id, "AI");
+                                    }
+                                    else
+                                    {
+                                        ServerSend.EndGame(lobby.PlayerClients[0].id, lobby.PlayerClients[0].player.username);
+                                    }
+                                }
+
+                                foreach(var client in lobby.SpectatorClients)
+                                {
+                                    ServerSend.EndGame(client.id, Server.clients[Server.clients[_fromClient].player.currentLobby.game.player1ID].player.username);
+                                }
+                            }
+                            else if(playerWon == 2)
+                            {
+                                if(lobby.type == LobbyType.PvP)
+                                {
+                                    foreach(var client in lobby.PlayerClients)
+                                    {
+                                        ServerSend.EndGame(client.id, Server.clients[Server.clients[_fromClient].player.currentLobby.game.player2ID].player.username);
+                                    }
+                                }
+                                else if(lobby.type == LobbyType.PvAI)
+                                {
+                                    if(lobby.game.player2ID == -1)
+                                    {
+                                        ServerSend.EndGame(lobby.PlayerClients[0].id, "AI");
+                                    }
+                                    else
+                                    {
+                                        ServerSend.EndGame(lobby.PlayerClients[0].id, lobby.PlayerClients[0].player.username);
+                                    }
+                                }
+                                
+
+                                foreach(var client in lobby.SpectatorClients)
+                                {
+                                    ServerSend.EndGame(client.id, Server.clients[Server.clients[_fromClient].player.currentLobby.game.player2ID].player.username);
+                                }
+                            }
+                            else
+                            {
+                                if(lobby.type == LobbyType.PvP)
+                                {
+                                    foreach(var client in lobby.PlayerClients)
+                                    {
+                                        if(client.id == lobby.game.currentPlayerID)
+                                        {
+                                            ServerSend.UpdateGame(client.id, true, lobby.game.diceResult1, lobby.game.diceResult2, moves);
+                                        }
+                                        else
+                                        {
+                                            ServerSend.UpdateGame(client.id, false, lobby.game.diceResult1, lobby.game.diceResult2, moves);
+                                        }
+                                    }
+                                }
+                                else if(lobby.type == LobbyType.PvAI)
+                                {
+                                    if(lobby.game.currentPlayerID == -1)
+                                    {
+                                        ServerSend.UpdateGame(lobby.PlayerClients[0].id, false, lobby.game.diceResult1, lobby.game.diceResult2, moves);
+                                    }
+                                    else
+                                    {
+                                        ServerSend.UpdateGame(lobby.PlayerClients[0].id, true, lobby.game.diceResult1, lobby.game.diceResult2, moves);
+                                    }
+                                }
+                                
 
                                 foreach(var client in lobby.SpectatorClients)
                                 {

@@ -35,6 +35,7 @@ public class ClientHandle : MonoBehaviour
 
             Client.instance.player.lobby = new Lobby(lobbyid, lobbyName, lobbyType, lobbyStatus);
             Client.instance.player.lobby.AddPlayer(Client.instance.player.playerName);
+            Client.instance.player.currentStatus = PlayerStatus.Player;
             UIManager.instance.MoveToLobby();
         }
         else 
@@ -201,13 +202,17 @@ public class ClientHandle : MonoBehaviour
         bool _firstMove = _packet.ReadBool();
         int _dice1= _packet.ReadInt();
         int _dice2 = _packet.ReadInt();
-        
+        if(Client.instance.player.currentStatus == PlayerStatus.Spectator)
+        {
+            string currentPlayerName = _packet.ReadString();
+            Client.instance.player.currentPlayerName = currentPlayerName;
+        }
         UIManager.instance.StartGame();
         Client.instance.player.lobby.SetStatus(GameState.InGame);
         Client.instance.player.turn = _firstMove;
         Client.instance.player.dice1 = _dice1;
         Client.instance.player.dice2 = _dice2;
-
+        
         //Client.instance.myId = _myId;
         //Maybe check later if id matches
     }
@@ -242,30 +247,50 @@ public class ClientHandle : MonoBehaviour
         int _dice2 = _packet.ReadInt();
         
         int moveCount = _packet.ReadInt();
+        if(Client.instance.player.currentStatus == PlayerStatus.Spectator)
+        {
+            string currentPlayerName = _packet.ReadString();
+            Client.instance.player.currentPlayerName = currentPlayerName;
+        }
         Client.instance.player.turn = turn;
         Client.instance.player.dice1 = _dice1;
         Client.instance.player.dice2 = _dice2;
         if(turn || Client.instance.player.currentStatus == PlayerStatus.Spectator)
         {
+            List<List<int>> list = new();
             for (int i = 0; i < moveCount; i++)
             {
                 int start = _packet.ReadInt();
                 int end = _packet.ReadInt();
-                GameManager.Instance.UpdateBoard(start, end);
+                list.Add(new List<int>{start, end});
+                
             }
+            GameManager.Instance.UpdateBoard(list);
         }
-        if(turn)
-        {
-            GameManager.Instance.EnableDice();
-            GameManager.Instance.SetFinaleDice(_dice1, _dice2);
-        }
-        else
+        if(!turn)
         {
             GameManager.Instance.DisableDice();
-            GameManager.Instance.SetFinaleDice(_dice1, _dice2);
+            GameManager.Instance.die1.Reset();
+            GameManager.Instance.SetFinaleDice(Client.instance.player.dice1, Client.instance.player.dice2);
             GameManager.Instance.RollDice();
+        }
+        
+        if(Client.instance.player.lobby.GetLobbyType().Equals("PvAI") && !turn && Client.instance.player.currentStatus == PlayerStatus.Player)
+        {
+            // Call this method to begin the process with a delay, e.g., 2 seconds
+            GameManager.Instance.SwitchTurnText(false);
+            for (int i = 0; i < moveCount; i++)
+            {
+                int start = _packet.ReadInt();
+                int end = _packet.ReadInt();
+                GameManager.Instance.agent.UpdateBoard(start, end);
+            }
+            GameManager.Instance.agent.SetDice(_dice1, _dice2);
+            GameManager.Instance.WaitForAIToStartCalc();
         }
         //Client.instance.myId = _myId;
         //Maybe check later if id matches
     }
+
+    
 }
