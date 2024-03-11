@@ -315,7 +315,25 @@ namespace Narde_Server
             }
         }
 
-        public static void AllowGame(int _toClient, bool firstMove, int dice1, int dice2)
+        public static void ConfirmSwitch(int _toClient)
+        {
+            using (Packet _packet = new((int)ServerPackets.confirmSwitch))//using block makes so that packet is automatically disposed
+            {
+                _packet.Write(_toClient);
+                
+                SendTCPData(_toClient, _packet);
+            }
+        }
+        public static void DenySwitch(int _toClient)
+        {
+            using Packet _packet = new((int)ServerPackets.denySwitch);//using block makes so that packet is automatically disposed
+            _packet.Write(_toClient);
+
+            SendTCPData(_toClient, _packet);
+        }
+
+
+        public static void AllowGame(int _toClient, bool firstMove, int dice1, int dice2, bool mainAI = false)
         {
             using (Packet _packet = new Packet((int)ServerPackets.allowGame))//using block makes so that packet is automatically disposed
             {
@@ -329,9 +347,20 @@ namespace Narde_Server
                     {
                         _packet.Write("AI");
                     }
-                    else
+                    else if(Server.clients[_toClient].player.currentLobby.type == LobbyType.PvP || (Server.clients[_toClient].player.currentLobby.type == LobbyType.PvAI && Server.clients[_toClient].player.currentLobby.game.currentPlayerID != -1))
                     {
                         _packet.Write(Server.clients[Server.clients[_toClient].player.currentLobby.game.currentPlayerID].player.username);
+                    }
+                    else if(Server.clients[_toClient].player.currentLobby.type == LobbyType.AIvAI)
+                    {
+                        if(mainAI)
+                        {
+                            _packet.Write("Advanced Agent");
+                        }
+                        else
+                        {
+                            _packet.Write("Random Agent");
+                        }
                     }
                     
                 }
@@ -358,7 +387,7 @@ namespace Narde_Server
             }
         }
 
-        public static void UpdateGame(int _toClient, bool turn, int dice1, int dice2, List<Move> moves)
+        public static void UpdateGame(int _toClient, bool turn, int dice1, int dice2, List<Move> moves, bool advanced = false)
         {
             using (Packet _packet = new Packet((int)ServerPackets.updateGame))//using block makes so that packet is automatically disposed
             {
@@ -367,13 +396,48 @@ namespace Narde_Server
                 _packet.Write(dice1);
                 _packet.Write(dice2);
                 _packet.Write(moves.Count);
+                if(Server.clients[_toClient].player.currentStatus == PlayerStatus.Spectator)
+                {
+                    if(Server.clients[_toClient].player.currentLobby.type == LobbyType.PvAI && Server.clients[_toClient].player.currentLobby.game.currentPlayerID == -1)
+                    {
+                        _packet.Write("AI");
+                    }
+                    else if(Server.clients[_toClient].player.currentLobby.type == LobbyType.AIvAI)
+                    {
+                        if(advanced)
+                        {
+                            _packet.Write("Advanced Agent");
+                        }
+                        else
+                        {
+                            _packet.Write("Random Agent");
+                        }
+                    }
+                    else
+                    {
+                        _packet.Write(Server.clients[Server.clients[_toClient].player.currentLobby.game.currentPlayerID].player.username);
+                    }
+                    
+                }
                 foreach(var move in moves)
                 {
                    int moveTempStart = move.StartingPoint;
                    int moveTempTarget = move.TargetPoint;
                    if(Server.clients[_toClient].player.currentStatus == PlayerStatus.Spectator)
                    {
-                        if(Server.clients[_toClient].player.currentLobby.game.currentPlayerID == Server.clients[_toClient].player.currentLobby.game.player1ID)
+                         if(Server.clients[_toClient].player.currentLobby.type == LobbyType.AIvAI && turn)
+                         {
+                            // if(Server.clients[_toClient].player.currentLobby.game.currentPlayerID == Server.clients[_toClient].player.currentLobby.game.player2ID)
+                            // {
+                            //     moveTempStart = (moveTempStart + 12) % 24;
+                            //     if(moveTempTarget != 24)
+                            //     {
+                            //         moveTempTarget = (moveTempTarget + 12) % 24;
+                            //     }
+                                
+                            // }
+                         }//Possible mistake here with wich player comparing maybe dont need it
+                        else if(Server.clients[_toClient].player.currentLobby.game.currentPlayerID == Server.clients[_toClient].player.currentLobby.game.player1ID)
                         {
                             moveTempStart = (moveTempStart + 12) % 24;
                             if(moveTempTarget != 24)
@@ -414,20 +478,27 @@ namespace Narde_Server
                     _packet.Write(moveTempStart);
                     _packet.Write(moveTempTarget);
                 }
-                if(Server.clients[_toClient].player.currentStatus == PlayerStatus.Spectator)
-                {
-                    if(Server.clients[_toClient].player.currentLobby.type == LobbyType.PvAI && Server.clients[_toClient].player.currentLobby.game.currentPlayerID == -1)
-                    {
-                        _packet.Write("AI");
-                    }
-                    else
-                    {
-                        _packet.Write(Server.clients[Server.clients[_toClient].player.currentLobby.game.currentPlayerID].player.username);
-                    }
-                    
-                }
+                
                 SendTCPData(_toClient, _packet);
             }
         }
-    }
+
+        public static void InvalidTurn(int _toClient)
+        {
+            using (Packet _packet = new((int)ServerPackets.invalidTurn))
+            {
+                _packet.Write(_toClient);
+                SendTCPData(_toClient, _packet);
+            }
+        }
+
+        public static void HostLeft(int _toClient)
+        {
+            using (Packet _packet = new((int)ServerPackets.hostLeft))
+            {
+                _packet.Write(_toClient);
+                SendTCPData(_toClient, _packet);
+            }
+        }
+}
 }

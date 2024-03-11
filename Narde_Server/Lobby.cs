@@ -65,10 +65,14 @@ namespace Narde_Server
         }
 
         // Method to remove a player from the lobby
-        public void RemovePlayer(Client player)
+        public void RemovePlayer(Client player, bool temp = false)
         {
             PlayerClients.Remove(player);
-            player.player.LeaveLobby();
+            if(!temp)
+            {
+                player.player.LeaveLobby();
+            }
+            
             if(type == LobbyType.PvP && gameState == GameState.InGame)
             {
                 
@@ -96,7 +100,7 @@ namespace Narde_Server
                 status = LobbyStatus.PlayersOnly;
             }
             if(PlayerClients.Count == 0 && SpectatorClients.Count == 0) Reset();
-            else
+            else if(!temp)
             {
                 foreach(var client in Server.lobbies[lobbyId].PlayerClients)
                         {   
@@ -128,11 +132,16 @@ namespace Narde_Server
             spectator.player.JoinLobby(this, PlayerStatus.Spectator);
         }
 
-        // Method to remove a player from the lobby
-        public void RemoveSpectator(Client spectator)
+        
+        public void RemoveSpectator(Client spectator, bool temp = false)
         {
+            
             SpectatorClients?.Remove(spectator);
-            spectator.player.LeaveLobby();
+            if(!temp)
+            {
+                spectator?.player?.LeaveLobby();
+            }
+            
             
             if(status == LobbyStatus.PlayersOnly)
             {
@@ -144,18 +153,28 @@ namespace Narde_Server
             }
             
             if(PlayerClients.Count == 0 && SpectatorClients.Count == 0) Reset();
-            else
+            else if(!temp)
             {
+                   
                 foreach(var client in Server.lobbies[lobbyId].PlayerClients)
-                        {   
-                             ServerSend.UpdateLobby(client.id, lobbyId);
+                {   
+                    ServerSend.UpdateLobby(client.id, lobbyId);
 
-                        }
+                }
                 foreach(var client in Server.lobbies[lobbyId].SpectatorClients)
-                        {   
+                {   
 
-                            ServerSend.UpdateLobby(client.id, lobbyId);
-                        }
+                    ServerSend.UpdateLobby(client.id, lobbyId);
+                }
+
+                if(type == LobbyType.AIvAI && gameState == GameState.InGame && spectator?.id == game?.hostID)
+                {
+                    foreach(var client in Server.lobbies[lobbyId].SpectatorClients)
+                    {   
+
+                        ServerSend.HostLeft(client.id);
+                    }
+                }
             }
         }
 
@@ -173,6 +192,10 @@ namespace Narde_Server
             if(limit == 0)
             {
                 status = LobbyStatus.PlayersOnly;
+            }
+            else if(type == LobbyType.AIvAI)
+            {
+                status = LobbyStatus.SpectatorsOnly;
             }
             else
             {

@@ -34,8 +34,17 @@ public class ClientHandle : MonoBehaviour
             UIManager.instance.createLobbyScript.waitingPanel.SetActive(false);
 
             Client.instance.player.lobby = new Lobby(lobbyid, lobbyName, lobbyType, lobbyStatus);
-            Client.instance.player.lobby.AddPlayer(Client.instance.player.playerName);
-            Client.instance.player.currentStatus = PlayerStatus.Player;
+            if(Client.instance.player.lobby.GetLobbyType().Equals("AIvAI"))
+            {
+                Client.instance.player.lobby.AddSpectator(Client.instance.player.playerName);
+                Client.instance.player.currentStatus = PlayerStatus.Spectator;
+            }
+            else
+            {
+                Client.instance.player.lobby.AddPlayer(Client.instance.player.playerName);
+                Client.instance.player.currentStatus = PlayerStatus.Player;
+            }
+            
             UIManager.instance.MoveToLobby();
         }
         else 
@@ -181,8 +190,7 @@ public class ClientHandle : MonoBehaviour
             }
             if(Client.instance.player.lobby.GetState() == GameState.Menu)
             {
-                UIManager.instance.lobbyScript.UpdatePlayerListUI();
-                UIManager.instance.lobbyScript.UpdateSpectatorListUI();
+                UIManager.instance.UpdateLobbyUI();
             }
             
         }
@@ -191,6 +199,33 @@ public class ClientHandle : MonoBehaviour
             ClientSend.LeaveLobby();
         }
         
+        //Client.instance.myId = _myId;
+        //Maybe check later if id matches
+    }
+
+    public static void ConfirmSwitch(Packet _packet)
+    {
+        
+        int _myId = _packet.ReadInt();
+        if(Client.instance.player.currentStatus == PlayerStatus.Player)
+        {
+            Client.instance.player.currentStatus = PlayerStatus.Spectator;
+        }
+        else if(Client.instance.player.currentStatus == PlayerStatus.Spectator)
+        {
+            Client.instance.player.currentStatus = PlayerStatus.Player;
+        }
+        
+        //Client.instance.myId = _myId;
+        //Maybe check later if id matches
+    }
+    public static void DenySwitch(Packet _packet)
+    {
+        
+        int _myId = _packet.ReadInt();
+        
+        UIManager.instance.lobbyScript.switchFailPanel.SetActive(true);
+        UIManager.instance.lobbyScript.startGame.interactable =false;
         //Client.instance.myId = _myId;
         //Maybe check later if id matches
     }
@@ -206,6 +241,7 @@ public class ClientHandle : MonoBehaviour
         {
             string currentPlayerName = _packet.ReadString();
             Client.instance.player.currentPlayerName = currentPlayerName;
+            
         }
         UIManager.instance.StartGame();
         Client.instance.player.lobby.SetStatus(GameState.InGame);
@@ -255,19 +291,42 @@ public class ClientHandle : MonoBehaviour
         Client.instance.player.turn = turn;
         Client.instance.player.dice1 = _dice1;
         Client.instance.player.dice2 = _dice2;
+        List<List<int>> list = new();
         if(turn || Client.instance.player.currentStatus == PlayerStatus.Spectator)
         {
-            List<List<int>> list = new();
-            for (int i = 0; i < moveCount; i++)
+            if(Client.instance.player.lobby.GetLobbyType().Equals("AIvAI") && turn)
             {
-                int start = _packet.ReadInt();
-                int end = _packet.ReadInt();
-                list.Add(new List<int>{start, end});
-                
+                for (int i = 0; i < moveCount; i++)
+                {
+                    int start = _packet.ReadInt();
+                    int end = _packet.ReadInt();
+                 /*   if(!GameManager.Instance.advancedFirst && Client.instance.player.currentPlayerName.Equals("Advanced Agent") || 
+                    GameManager.Instance.advancedFirst && Client.instance.player.currentPlayerName.Equals("Random Agent"))
+                    {
+                        start = (start + 12) % 24;
+                        if(end != 24)
+                        {
+                            end = (end + 12) % 24;
+                        }
+                    }*/
+                    
+                    list.Add(new List<int>{start, end});
+                    
+                }
             }
+            else
+            {
+                for (int i = 0; i < moveCount; i++)
+                {
+                    int start = _packet.ReadInt();
+                    int end = _packet.ReadInt();
+                    list.Add(new List<int>{start, end});
+                }
+            }
+            
             GameManager.Instance.UpdateBoard(list);
         }
-        if(!turn)
+        else if(!turn)
         {
             GameManager.Instance.DisableDice();
             GameManager.Instance.die1.Reset();
@@ -286,11 +345,73 @@ public class ClientHandle : MonoBehaviour
                 GameManager.Instance.agent.UpdateBoard(start, end);
             }
             GameManager.Instance.agent.SetDice(_dice1, _dice2);
-            GameManager.Instance.WaitForAIToStartCalc();
+            GameManager.Instance.WaitForAIToStartCalc(2f, GameManager.Instance.agent);
+        }
+        else if (Client.instance.player.lobby.GetLobbyType().Equals("AIvAI") && turn)
+        {
+            
+            if(Client.instance.player.currentPlayerName.Equals("Advanced Agent"))
+            {
+                for (int i = 0; i < list.Count; i++)
+                {
+                    int start = list[i][0];
+                    int end = list[i][1];
+                    if(!GameManager.Instance.advancedFirst)
+                    {
+                        start = (start + 12) % 24;
+                        if(end != 24)
+                        {
+                            end = (end + 12) % 24;
+                        }
+                    }
+                    GameManager.Instance.agent.UpdateBoard(start, end);
+                }
+                GameManager.Instance.agent.SetDice(_dice1, _dice2);
+                GameManager.Instance.WaitForAIToStartCalc(5f, GameManager.Instance.agent);
+            }
+            else
+            {
+                for (int i = 0; i < list.Count; i++)
+                {
+                    int start = list[i][0];
+                    int end = list[i][1];
+                    if(GameManager.Instance.advancedFirst)
+                    {
+                        start = (start + 12) % 24;
+                        if(end != 24)
+                        {
+                            end = (end + 12) % 24;
+                        }
+                    }
+                    GameManager.Instance.agent2.UpdateBoard(start, end);
+                }
+                GameManager.Instance.agent2.SetDice(_dice1, _dice2);
+                GameManager.Instance.WaitForAIToStartCalc(5f, GameManager.Instance.agent2);
+            }
         }
         //Client.instance.myId = _myId;
         //Maybe check later if id matches
     }
 
+    public static void InvalidTurn(Packet _packet)
+    {
+        
+        int _myId = _packet.ReadInt();
+        
+        GameManager.Instance.UndoTurn();
+        GameManager.Instance.invalidTurnText.SetActive(true);
+        //Client.instance.myId = _myId;
+        //Maybe check later if id matches
+    }
+
+    public static void HostLeft(Packet _packet)
+    {
+        
+        int _myId = _packet.ReadInt();
+        
+        GameManager.Instance.FinishGame("Host Left", true);
+        //Client.instance.myId = _myId;
+        //Maybe check later if id matches
+    }
     
 }

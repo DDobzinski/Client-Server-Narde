@@ -28,6 +28,10 @@ public class MoveOption {
     }
 public class GameManager : MonoBehaviour
 {
+    private List<Color32> colors = new();
+    public Image boardImage;
+    public Image side1;
+    public Image side2;
     public static GameManager Instance { get; private set; }
     private Checker.CheckerColor playerColor = Checker.CheckerColor.Player;
     private Point selectedPoint;
@@ -37,9 +41,13 @@ public class GameManager : MonoBehaviour
     public Dice die2;
     public Remover remover;
     public Button endTurnButton;
+    public Button undoTurnButton;
     public Button surrenderButton;
     public Button stopSpectatingButton;
+    
     public TMP_Text endturnButtonText;
+    public TMP_Text undoTurnButtonText;
+    public GameObject invalidTurnText;
     public CanvasGroup board;
     public CanvasGroup UI;
     public GameObject EndPanel;
@@ -61,8 +69,13 @@ public class GameManager : MonoBehaviour
     private int moveNr = 1;
     private int maxMovesPossible = 0;
     private MoveOption lastMoveDone;
+    private List<List<int>> OpponentsMoves = new();
     public Agent agent;
+    public Agent agent2;
+    public bool advancedFirst;
     bool removalStage = false;
+
+
     void Awake()
     {
         if (Instance == null)
@@ -78,40 +91,91 @@ public class GameManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        AddColours();
         SetupBoard();
         if(Client.instance.player.currentStatus == PlayerStatus.Spectator)
         {
             endTurnButton.gameObject.SetActive(false);
+            undoTurnButton.gameObject.SetActive(false);
             surrenderButton.gameObject.SetActive(false);
             stopSpectatingButton.gameObject.SetActive(true);
-            die1.DisableDice();
         }
-        else
-        {
-            SwitchTurnText(Client.instance.player.turn);
-        }
+        
+        SwitchTurnText(Client.instance.player.turn);
+        
         if(Client.instance.player.lobby.GetLobbyType().Equals("PvAI"))
         {
-            agent = new();
+            agent = new(true);
             if(!Client.instance.player.turn)
             {
                 agent.SetDice(Client.instance.player.dice1, Client.instance.player.dice2);
-                WaitForAIToStartCalc();
+                WaitForAIToStartCalc(2f, agent);
+            }
+        }
+        else if(Client.instance.player.lobby.GetLobbyType().Equals("AIvAI") && Client.instance.player.turn)
+        {
+            agent = new(true);
+            agent2 = new(false);
+            if(Client.instance.player.currentPlayerName.Equals("Advanced Agent"))
+            {
+                advancedFirst = true;
+                agent.SetDice(Client.instance.player.dice1, Client.instance.player.dice2);
+                WaitForAIToStartCalc(1f, agent);
+            }
+            else
+            {
+                advancedFirst = false;
+                agent2.SetDice(Client.instance.player.dice1, Client.instance.player.dice2);
+                WaitForAIToStartCalc(1f, agent2);
             }
         }
     }
-
+    void AddColours()
+    {
+        colors.Add(new Color32(182, 127, 60, 255));
+        colors.Add(new Color32(253, 236, 213, 255));
+        colors.Add(new Color32(255, 255, 255, 255));
+        colors.Add(new Color32(86, 85, 78, 255));
+        colors.Add(new Color32(242, 193, 100, 255));
+        colors.Add(new Color32(216, 165, 106, 255));
+        colors.Add(new Color32(229, 92, 90, 255));
+        colors.Add(new Color32(250, 115, 188, 255));
+        colors.Add(new Color32(193, 101, 254, 255));
+        colors.Add(new Color32(98, 84, 238, 255));
+        colors.Add(new Color32(58, 153, 248, 255));
+        colors.Add(new Color32(80, 242, 236, 255));
+        colors.Add(new Color32(73, 254, 152, 255));
+        colors.Add(new Color32(100, 227, 62, 255));
+        colors.Add(new Color32(151, 223, 57, 255));
+        colors.Add(new Color32(238, 236, 81, 255));
+        colors.Add(new Color32(195, 195, 195, 255));
+        colors.Add(new Color32(117, 117, 117, 255));
+    }
      void SetupBoard()
     {
+        boardImage.color = colors[Client.instance.player.boardColour];
+        side1.color = colors[Client.instance.player.sideColour]; 
+        side2.color = colors[Client.instance.player.sideColour]; 
         for (int i = 0; i < Points.Count; i++)
         {
             Point PointScript = Points[i].GetComponent<Point>();
+            Image PointImage = Points[i].GetComponent<Image>();
+            if(i % 2 == 0)
+            {
+                PointImage.color = colors[Client.instance.player.point1Colour];
+            }
+            else
+            {
+                PointImage.color = colors[Client.instance.player.point2Colour];
+            }
+            PointScript.defaultColor = PointImage.color;
             if (PointScript == null) continue;
 
             // Instantiate Player 1 checkers
             for (int j = 0; j < startingCheckersCountPlayer[i]; j++)
             {
                 GameObject newChecker = Instantiate(playerCheckerPrefab, Points[i].transform);
+                newChecker.GetComponent<SpriteRenderer>().color = colors[Client.instance.player.playerCheckerColour];
                 PositionChecker(newChecker, j, PointScript.pointType); // Offset by Player 1 checkers
                 Points[i].AddChecker(newChecker);
             }
@@ -120,6 +184,7 @@ public class GameManager : MonoBehaviour
             for (int j = 0; j < startingCheckersCountEnemy[i]; j++)
             {
                 GameObject newChecker = Instantiate(enemyCheckerPrefab, Points[i].transform);
+                newChecker.GetComponent<SpriteRenderer>().color = colors[Client.instance.player.enemyCheckerColour];
                 PositionChecker(newChecker, j, PointScript.pointType); // Offset by Player 1 checkers
                 Points[i].AddChecker(newChecker);
             }
@@ -144,12 +209,14 @@ public class GameManager : MonoBehaviour
             {
                 if(selectedPoint!= point)
                 {
+                    point.MarkTopChecker(false);
                     MoveChecker(selectedPoint, point);
                     MovesDone.Add(FindMoveForPoint(selectedPoint, point));
                     lastMoveDone = MovesDone[^1];
                     List<int> UsedDice = lastMoveDone.DiceUsed;
                     moveNr += UsedDice.Count;
-                    
+                    lastMoveDone.StartingPoint.MarkTopChecker(false);
+                    lastMoveDone.TargetPoint.MarkTopChecker(true);
                     if(point.CanRemoveChecker() && !removalStage)
                     {
                         removalStage = AreAllCheckersInLastSix(Points, playerColor);
@@ -182,11 +249,12 @@ public class GameManager : MonoBehaviour
                 }
 
                 if(moveNr == maxMovesPossible + 1) MakeButtonInteractable(true);
+                MakeUndoButtonInteractable(true);
+
                 selectedPoint = null;
                 
                 
                 UnhighlightAllPoints();
-                
             }
             
         }
@@ -430,6 +498,7 @@ public class GameManager : MonoBehaviour
                 //Debug.Log("Remove move added for startIndex:" + startIndex);
                 MoveOption newMoveOption = new(startPoint, null, diceUsed, diceUseCount1 + diceUseCount2 - dice1uses - dice2uses + 1, prevMove);
                 possibleMoves.Add(newMoveOption);
+                return true;
             }
             else if( 24 - startIndex < moveDistance)
             {
@@ -446,6 +515,7 @@ public class GameManager : MonoBehaviour
                 {
                     MoveOption newMoveOption = new(startPoint, null, diceUsed, diceUseCount1 + diceUseCount2 - dice1uses - dice2uses + 1, prevMove);
                     possibleMoves.Add(newMoveOption);
+                    return true;
                 }
             }
         }
@@ -631,13 +701,14 @@ public class GameManager : MonoBehaviour
             {
                 // Handle the removed checker (e.g., disable it, return to a pool, etc.)
                 Checker checkerComponent = checkerToRemove.GetComponent<Checker>();
-                checkerComponent.MakeCheckerInvisible();
+                checkerComponent.MakeCheckerInvisible(true);
                 
                 selectedPoint = null;
                 if(moveNr == maxMovesPossible + 1) MakeButtonInteractable(true);
+                MakeUndoButtonInteractable(true);
                 UnhighlightAllPoints();
-                
             }
+            selectedPoint.AddRemovedChecker(checkerToRemove);
         }
     }
 
@@ -650,8 +721,9 @@ public class GameManager : MonoBehaviour
             {
                 // Handle the removed checker (e.g., disable it, return to a pool, etc.)
                 Checker checkerComponent = checkerToRemove.GetComponent<Checker>();
-                checkerComponent.MakeCheckerInvisible();
+                checkerComponent.MakeCheckerInvisible(true);
             }
+            startPoint.AddRemovedChecker(checkerToRemove);
         }
     }
 
@@ -669,6 +741,17 @@ public class GameManager : MonoBehaviour
         diceRollResult1 = side1; // Assuming a 6-sided die
         diceRollResult2 = side2;
         // Set use counts based on whether a double was rolled
+        
+        
+        die1.DisableDice();
+        foreach(var move in MovesDone)
+        {
+            if(move.TargetPoint != null)
+            {
+                
+                move.TargetPoint.MarkTopChecker(false);
+            }
+        }
         if(diceRollResult1 == diceRollResult2)
         {
             diceUseCount1 = 4; 
@@ -678,8 +761,6 @@ public class GameManager : MonoBehaviour
             diceUseCount1 = 1; 
             diceUseCount2 = 1;
         }
-        
-        die1.DisableDice();
         MovesDone = new();
         CalculateAllowedMoves(Points, Checker.CheckerColor.Player, Checker.CheckerColor.Enemy, diceUseCount1, diceUseCount2, removalStage);
         diceRolled = true;
@@ -689,7 +770,7 @@ public class GameManager : MonoBehaviour
         die1.DisableDice();
     }
 
-      public void EnableDice()
+    public void EnableDice()
     {
         die1.EnableDice();
     }
@@ -709,26 +790,62 @@ public class GameManager : MonoBehaviour
 
 
     public void EndTurn()
-    {
-        moveOfTheHeadCount = 0;
-        
-        foreach (var point in Points) {
-            point.possibleMoves.Clear();
-        }
-        moveNr = 1;
-        lastMoveDone = null;
-        firstTurnOfTheGame =false;
-        diceRolled = false;
-        highestDiePossible =false;
+    {//has to be somewhat redone
+       
         MakeButtonInteractable(false);
+        MakeUndoButtonInteractable(false);
+        invalidTurnText.SetActive(false);
         //die1.EnableDice();
         ClientSend.EndTurn(diceRollResult1, diceRollResult2);
     }
+
+    public void UndoTurn()
+    {
+        MakeUndoButtonInteractable(false);
+        MakeButtonInteractable(false);
+        for(int i = MovesDone.Count-1; i >=0; i--)
+        {
+            if(MovesDone[i].TargetPoint != null)
+            {
+                MovesDone[i].TargetPoint.MarkTopChecker(false);
+                MoveChecker(MovesDone[i].TargetPoint, MovesDone[i].StartingPoint);
+            }
+            else
+            {
+                GameObject checker = MovesDone[i].StartingPoint.RemoveTopCheckerFromRemoved();
+                checker.GetComponent<Checker>().MakeCheckerInvisible(false);
+                MovesDone[i].StartingPoint.AddChecker(checker);
+            }
+        }
+        moveOfTheHeadCount = 0;
+        MovesDone = new();
+        moveNr = 1;
+        lastMoveDone = null;
+        if(diceRollResult1 == diceRollResult2)
+        {
+            diceUseCount1 = 4; 
+            diceUseCount2 = 0;
+        }else
+        {
+            diceUseCount1 = 1; 
+            diceUseCount2 = 1;
+        }
+        SwitchTurnText(true);
+        MakeUndoButtonInteractable(false);
+        //firstTurnOfTheGame =false;
+        //MakeButtonInteractable(false);
+    }
+
 
     void MakeButtonInteractable(bool isInteractable)
     {
         endTurnButton.interactable = isInteractable;
         endturnButtonText.color = isInteractable ? new Color32(115, 243, 121, 255) : new Color32(224, 224, 224, 255); // Change as needed
+    }
+    void MakeUndoButtonInteractable(bool isInteractable)
+    {
+        undoTurnButton.interactable = isInteractable;
+        undoTurnButtonText.color = isInteractable ? new Color32(243, 211, 58, 255) : new Color32(224, 224, 224, 255); // Change as needed
     }
 
     public void Surrender()
@@ -753,7 +870,7 @@ public class GameManager : MonoBehaviour
         
     }
 
-    public void FinishGame(string WinnerName)
+    public void FinishGame(string WinnerName, bool hostLeft = false)
     {
         UI.interactable = false;
         board.interactable = false;
@@ -763,20 +880,49 @@ public class GameManager : MonoBehaviour
             foreach(GameObject checker in point.checkersStack)
             {
                 Checker checkerComponent = checker.GetComponent<Checker>();
-                checkerComponent.MakeCheckerInvisible();
+                checkerComponent.MakeCheckerInvisible(true);
             }
         }
-        WinnerText.text = WinnerName + " Wins";
+        if(!hostLeft)
+        {
+            WinnerText.text = WinnerName + " Wins";
+        }
+        else
+        {
+            WinnerText.text = WinnerName;
+        }
     }
 
     public void ReturnToMenu()
     {
+        Client.instance.player.dice1 = 0;
+        Client.instance.player.dice2 = 0;
+        Client.instance.player.currentPlayerName = null;
         SceneManager.LoadScene("Main");
-        Client.instance.player.lobby.SetStatus(GameState.Menu);
+        
     }
 
     public void UpdateBoard(List<List<int>> moves)
     {
+        foreach(var move in OpponentsMoves)
+        {
+            if(move[1] != 24)
+            {
+                Points[move[1]].MarkTopChecker(false);
+            }
+        }
+        OpponentsMoves = moves;
+        //Restart for turn
+        moveOfTheHeadCount = 0;
+        
+        foreach (var point in Points) {
+            point.possibleMoves.Clear();
+        }
+        moveNr = 1;
+        lastMoveDone = null;
+        firstTurnOfTheGame =false;
+        diceRolled = false;
+        highestDiePossible =false;
         StartCoroutine(UpdateMovesSequence(moves, 1f, UpdateUI));
     }
     IEnumerator UpdateMovesSequence(List<List<int>> moves, float delayBetweenMoves, Action onComplete)
@@ -785,7 +931,10 @@ public class GameManager : MonoBehaviour
         {
             if(move[1] != 24)
             {
+                Points[move[1]].MarkTopChecker(false);
                 MoveChecker(Points[move[0]], Points[move[1]]);
+                Points[move[0]].MarkTopChecker(false);
+                Points[move[1]].MarkTopChecker(true);
             }
             else
             {
@@ -800,7 +949,7 @@ public class GameManager : MonoBehaviour
 
         SwitchTurnText(Client.instance.player.turn);
         
-        if(Client.instance.player.turn)
+        if(Client.instance.player.turn && Client.instance.player.currentStatus == PlayerStatus.Player)
         {
             EnableDice();
             die1.Reset();
@@ -814,14 +963,14 @@ public class GameManager : MonoBehaviour
             RollDice();
         }
     }
-    IEnumerator StartAICalculationWithDelay(float delayInSeconds)
+    IEnumerator StartAICalculationWithDelay(float delayInSeconds, Agent _agent)
     {
         yield return new WaitForSeconds(delayInSeconds); // Wait for the specified delay
-        agent.MakeMove();
+        _agent.MakeMove();
     }
-    public void WaitForAIToStartCalc()
+    public void WaitForAIToStartCalc(float delayInSeconds, Agent _agent)
     {
-        StartCoroutine(StartAICalculationWithDelay(2f));
+        StartCoroutine(StartAICalculationWithDelay(delayInSeconds, _agent));
         
     }
     public void SwitchTurnText(bool turn)

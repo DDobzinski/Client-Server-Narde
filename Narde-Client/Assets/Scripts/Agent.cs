@@ -6,6 +6,7 @@ using System;
 using UnityEngine.SocialPlatforms.Impl;
 public class Agent
 {
+    private readonly bool advanced;
     public List<AgentPoint> Board = new();
     private int dice1;
     private int dice2;
@@ -25,8 +26,10 @@ public class Agent
     private double bestScore;
     private bool highestDiePossible;
     private AgentMoveOption bestMove;
-    public Agent()
+    private List<AgentMoveOption> legalMoves;
+    public Agent(bool _advanced)
     {
+        advanced = _advanced;
         for(int i = 0; i < 24; i++)
         {
             AgentPoint point;   
@@ -53,13 +56,14 @@ public class Agent
 
     public void MakeMove()
     {
-        Debug.Log($"Dice1: {dice1} and dice2 {dice2}");
+        
         AIaddWeights = new();
         finalMoves = new();
         maxMovesPossible = 0;
         bestScore = -1000000;
         bestMove = null;
         highestDiePossible = false;
+        legalMoves = new();
         foreach (var point in Board) {
             point.possibleMoves.Clear();
         }
@@ -118,7 +122,7 @@ public class Agent
             
             CalculateAllowedMoves(Board, Checker.CheckerColor.Player, Checker.CheckerColor.Enemy, dice1Uses, dice2Uses, removalStage, totalCheckerCount);
             
-            if(dice1Uses + dice2Uses != maxMovesPossible && bestMove == null)
+            if(dice1Uses + dice2Uses != maxMovesPossible && (bestMove == null || (!advanced && legalMoves.Count == 0)))
             {
                 foreach (var point in Board)
                 {
@@ -128,36 +132,48 @@ public class Agent
                         {
                             continue;
                         }
-                        List<AgentMoveOption> moves = new();
-                        CollectMovesRecursive(move, moves);
-                        foreach(var moveOrdered in moves)
+                        if(advanced)
                         {
-                            moveOrdered.StartingPoint.RemoveTopChecker();
-                            moveOrdered.TargetPoint?.AddChecker(Checker.CheckerColor.Player);
-                        }
-                        double score = AIWeightFunc(move);
-                        if(bestMove != null)
-                        {
-                            if(score > bestScore)
+                            List<AgentMoveOption> moves = new();
+                            CollectMovesRecursive(move, moves);
+                            foreach(var moveOrdered in moves)
+                            {
+                                moveOrdered.StartingPoint.RemoveTopChecker();
+                                moveOrdered.TargetPoint?.AddChecker(Checker.CheckerColor.Player);
+                            }
+                            double score = AIWeightFunc(move);
+                            if(bestMove != null)
+                            {
+                                if(score > bestScore)
+                                {
+                                    bestScore = score;
+                                    bestMove = move;
+                                }
+                            }
+                            else
                             {
                                 bestScore = score;
                                 bestMove = move;
                             }
+                            
+                            for (int i = moves.Count - 1; i >= 0; i--)
+                            {
+                                moves[i].TargetPoint?.RemoveTopChecker();
+                                moves[i].StartingPoint.AddChecker(Checker.CheckerColor.Player);
+                            }
                         }
                         else
                         {
-                            bestScore = score;
-                            bestMove = move;
+                            legalMoves.Add(move);
                         }
                         
-                        for (int i = moves.Count - 1; i >= 0; i--)
-                        {
-                            moves[i].TargetPoint?.RemoveTopChecker();
-                            moves[i].StartingPoint.AddChecker(Checker.CheckerColor.Player);
-                        }
-
                     }
                 }
+            }
+            if(!advanced && legalMoves.Count > 0)
+            {
+                int randomMoveID = new System.Random().Next(0, legalMoves.Count);
+                bestMove = legalMoves[randomMoveID];
             }
             
             if(bestMove != null)
@@ -170,13 +186,17 @@ public class Agent
                 {
                     move.StartingPoint.RemoveTopChecker();
                     move.TargetPoint?.AddChecker(Checker.CheckerColor.Player);
+                    if(move.TargetPoint != null && move.TargetPoint.CanRemoveChecker() && !removalStage)
+                    {
+                        removalStage = AreAllCheckersInLastSix(Board, Checker.CheckerColor.Player);
+                    }
                 }
             }
         }
         
         
         firstTurnOfTheGame = false;
-        ClientSend.EndTurnAI(dice1, dice2);
+        ClientSend.EndTurnAI(this, dice1, dice2);
     }
     private void CollectMovesRecursive(AgentMoveOption move, List<AgentMoveOption> moves)
     {
@@ -200,24 +220,31 @@ public class Agent
         if(firstTurnOfTheGame && dice1 == dice2 && (dice1 == 3 || dice1 == 4 || dice1 == 6)) CalculateHeadMoveLimit = 2;
         if(dice1uses == 0 && dice2uses == 0)
         {
-            
-            double score = AIWeightFunc(moveCalculated);
-            
-            if(bestMove != null)
+            if(advanced)
             {
-                if(score > bestScore)
+                double score = AIWeightFunc(moveCalculated);
+            
+                if(bestMove != null)
+                {
+                    if(score > bestScore)
+                    {
+                        bestScore = score;
+                        bestMove = moveCalculated;
+                    }
+                }
+                else
                 {
                     bestScore = score;
                     bestMove = moveCalculated;
+                    
                 }
             }
             else
             {
-                bestScore = score;
-                bestMove = moveCalculated;
-                
+                legalMoves.Add(moveCalculated);
             }
-            //ADD Evaluate Board maybe add dice
+            
+            
             return;
         }
         foreach (var point in copiedPoints)
@@ -269,40 +296,29 @@ public class Agent
                 {
                     moveCalculated.usesAllDice = true;
                 }
-
-                if(move.TargetPoint != null)
+                if(advanced)
                 {
-                    SimulateMoveChecker(move.StartingPoint ,move.TargetPoint);
-                }
-                else{
-                    move.StartingPoint.RemoveTopChecker();
-                }
-               
-
-                double score = AIWeightFunc(move);
+                    double score = AIWeightFunc(move);
                 
-                if(bestMove != null)
-                {
-                    if(score > bestScore)
+                    if(bestMove != null)
+                    {
+                        if(score > bestScore)
+                        {
+                            bestScore = score;
+                            bestMove = move;
+                        }
+                    }
+                    else
                     {
                         bestScore = score;
                         bestMove = move;
+                        
                     }
                 }
                 else
                 {
-                    bestScore = score;
-                    bestMove = move;
-                    
+                    legalMoves.Add(move);
                 }
-                if(move.TargetPoint != null)
-                {
-                    SimulateMoveChecker(move.TargetPoint, move.StartingPoint); 
-                }
-                else{
-                    move.StartingPoint.AddChecker(Checker.CheckerColor.Player);
-                }
-                //Important maybe here
             }
             else if(move.TargetPoint == null)
             {
@@ -360,6 +376,7 @@ public class Agent
                     if(dice1 >= dice2 && highestDiePossible)
                     {
                         point.possibleMoves.RemoveAll(move => move.DiceUsed[0] != 1);
+                        
                     }
                     else if(highestDiePossible)
                     {
@@ -389,6 +406,7 @@ public class Agent
                 //Debug.Log("Remove move added for startIndex:" + startIndex);
                 AgentMoveOption newMoveOption = new(startPoint, null, diceUsed, dice1Uses + dice2Uses - dice1uses - dice2uses + 1, prevMove, false, simtotalCheckerCount - 1);
                 possibleMoves.Add(newMoveOption);
+                return true;
             }
             else if( 24 - startIndex < moveDistance)
             {
@@ -405,7 +423,9 @@ public class Agent
                 {
                     AgentMoveOption newMoveOption = new(startPoint, null, diceUsed, dice1Uses + dice2Uses - dice1uses - dice2uses + 1, prevMove, false, simtotalCheckerCount - 1);
                     possibleMoves.Add(newMoveOption);
+                    return true;
                 }
+                Debug.Log("Prev are empty" + previousAreEmpty);
             }
         }
         
@@ -550,7 +570,6 @@ public class Agent
         startingPoint.RemoveTopChecker();
         targetPoint.AddChecker(Checker.CheckerColor.Player);
     }
-
 
     private double AIWeightFunc(AgentMoveOption move)
     {

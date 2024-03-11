@@ -23,7 +23,8 @@ public class UIManager : MonoBehaviour
     public CreateLobby createLobbyScript;
     public LobbyManager lobbyScript;
     public JoinLobbyManager joinLobbyManagerScript;
-    public string playerName;
+    public OptionsManager optionsManagerScript;
+    //public string playerName;
     private void Awake()
     {
         if(instance == null)//ensures only one instance of the client class exists
@@ -53,8 +54,7 @@ public class UIManager : MonoBehaviour
                 lobbyLayout.SetActive(true);
                 menuHeader.text = "Lobby";
                 lobbyScript.lobbyName.text = Client.instance.player.lobby.GetName();
-                lobbyScript.UpdatePlayerListUI();
-                lobbyScript.UpdateSpectatorListUI();
+                UpdateLobbyUI();
             }
         }
     }
@@ -68,7 +68,7 @@ public class UIManager : MonoBehaviour
     }
     public void OnConnectionConfirmed()
     {
-        playerName = usernameField.text;
+        //playerName = usernameField.text;
         instance.startMenu.SetActive(false);
         instance.connectionPanel.SetActive(false);
         instance.mainMenu.SetActive(true);
@@ -117,6 +117,7 @@ public class UIManager : MonoBehaviour
     {
         mainLayout.SetActive(false);
         menuHeader.text = "Options";
+        optionsManagerScript.SetValues();
         optionsLayout.SetActive(true);
     }
     public void Return(GameObject layout)
@@ -132,8 +133,14 @@ public class UIManager : MonoBehaviour
         lobbyLayout.SetActive(true);
         menuHeader.text = "Lobby";
         lobbyScript.lobbyName.text = Client.instance.player.lobby.GetName();
+        UpdateLobbyUI();
+        
+    }
+    public void UpdateLobbyUI()
+    {
         lobbyScript.UpdatePlayerListUI();
         lobbyScript.UpdateSpectatorListUI();
+        lobbyScript.SetSwitchButton();
     }
 
     public void LeaveLobby()

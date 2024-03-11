@@ -5,17 +5,18 @@ using UnityEngine.UI;
 using TMPro;
 public class LobbyManager : MonoBehaviour
 {
-    public TMP_Text lobbyName; // Assign in Inspector
-    public GameObject playerPanel; // Assign in Inspector
-    public GameObject spectatorPanel; // Assign in Inspector
-    public GameObject playerTextPrefab; // Assign a prefab with Text component
-    public GameObject spectatorTextPrefab; // Assign a prefab with Text component
+    public TMP_Text lobbyName;
+    public GameObject playerPanel;
+    public GameObject spectatorPanel;
+    public GameObject playerTextPrefab;
+    public GameObject spectatorTextPrefab; 
 
-    public GameObject failPanel; // Assign a prefab with Text component
-    public Button startGame; // Assign a prefab with Text component
-    public TMP_Text startGameText; // Assign a prefab with Text component
-    // Start is called before the first frame update
-
+    public GameObject failPanel;
+    public GameObject switchFailPanel;
+    public Button startGame;
+    public TMP_Text startGameText;
+    public Button switchButton; 
+    public TMP_Text switchButtonText; 
     public void UpdatePlayerListUI()
     {
         ClearPanel(playerPanel);
@@ -48,6 +49,38 @@ public class LobbyManager : MonoBehaviour
         }
     }
 
+     public void SetSwitchButton()
+    {
+        PlayerStatus playerStatus = Client.instance.player.currentStatus;
+        LobbyStatus lobbyStatus = Client.instance.player.lobby.GetStatus();
+        if(playerStatus == PlayerStatus.Player)
+        {
+            if(lobbyStatus == LobbyStatus.Open || lobbyStatus == LobbyStatus.SpectatorsOnly)
+            {
+                switchButton.interactable = true;
+                switchButtonText.color = new Color32(255, 242, 192, 255);
+            }
+            else
+            {
+                switchButton.interactable = false;
+                switchButtonText.color = new Color32(128, 128, 128, 255);
+            }
+        }
+        else if(playerStatus == PlayerStatus.Spectator)
+        {
+            if(lobbyStatus == LobbyStatus.Open || lobbyStatus == LobbyStatus.PlayersOnly)
+            {
+                switchButton.interactable = true;
+                switchButtonText.color = new Color32(255, 242, 192, 255);
+            }
+            else
+            {
+                switchButton.interactable = false;
+                switchButtonText.color = new Color32(128, 128, 128, 255);
+            }
+        }
+    }
+
     public void ClearPanel(GameObject panel)
     {
         foreach (Transform child in panel.transform)
@@ -61,6 +94,11 @@ public class LobbyManager : MonoBehaviour
         newText.GetComponent<TMP_Text>().text = text; // Or TextMeshProUGUI if using TMP
     }
     
+    public void Switch()
+    {
+        ClientSend.SwitchStatus();
+    }
+
     public void StartGame()
     {
         ClientSend.StartGame();
@@ -69,6 +107,11 @@ public class LobbyManager : MonoBehaviour
     public void RemoveFailPanel()
     {
         failPanel.SetActive(false);
+        startGame.interactable = true;
+    }
+    public void RemoveSwitchFailPanel()
+    {
+        switchFailPanel.SetActive(false);
         startGame.interactable = true;
     }
 }

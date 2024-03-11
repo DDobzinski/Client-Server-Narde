@@ -16,8 +16,23 @@ public class Player
     public int dice1 = 0;
     public int dice2 = 0;
     public string currentPlayerName = null;
+    public int point1Colour = 0;
+    public int point2Colour = 1;
+    public int playerCheckerColour = 2;
+    public int enemyCheckerColour = 3;
+    public int boardColour = 4;
+    public int sideColour = 5;
     public Player(string _playerName)
     {
         playerName = _playerName;
+    }
+    public void SaveSettings(int _point1Colour, int _point2Colour, int _playerCheckerColour, int _enemyCheckerColour, int _boardColour, int _sideColour)
+    {
+        point1Colour = _point1Colour;
+        point2Colour = _point2Colour;
+        playerCheckerColour = _playerCheckerColour;
+        enemyCheckerColour = _enemyCheckerColour;
+        boardColour = _boardColour;
+        sideColour = _sideColour;
     }
 }

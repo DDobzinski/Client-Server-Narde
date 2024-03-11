@@ -20,7 +20,7 @@ public class Point : MonoBehaviour
     private Image pointImage;
     public PointType pointType;
     public List<GameObject> checkersStack = new List<GameObject>();
-    
+    private List<GameObject> removedCheckersStack = new List<GameObject>();
     public List<MoveOption> possibleMoves = new List<MoveOption>();
     void Start()
     {
@@ -58,8 +58,12 @@ public class Point : MonoBehaviour
     public void AddChecker(GameObject checker)
     {
         checkersStack.Add(checker);
-        // Optionally, position the checker on the Point here
+
         PositionCheckerInStack(checker, checkersStack.Count - 1);
+    }
+    public void AddRemovedChecker(GameObject checker)
+    {
+        removedCheckersStack.Add(checker);
     }
 
     public void SimulateAddChecker(GameObject checker)
@@ -89,6 +93,20 @@ public class Point : MonoBehaviour
             SortCheckers();
 
             return checkerToRemove;
+        }
+        return null;
+    }
+
+    public GameObject RemoveTopCheckerFromRemoved()
+    {
+        if (removedCheckersStack.Count > 0)
+        {
+            // Remove the top checker from the stack
+            int lastIndex = removedCheckersStack.Count - 1;
+            GameObject checker = removedCheckersStack[lastIndex];
+            removedCheckersStack.RemoveAt(lastIndex);
+
+            return checker;
         }
         return null;
     }
@@ -147,6 +165,17 @@ public class Point : MonoBehaviour
         // Logic to determine if a checker can be removed from this triangle
         // This might check if the triangle is one of the last six and other game-specific conditions
         return gameObject.tag == "RemovePoint"; // Replace with actual logic
+    }
+
+    public void MarkTopChecker(bool mark)
+    {
+        if (checkersStack.Count > 0)
+        {
+            // Remove the top checker from the stack
+            int lastIndex = checkersStack.Count - 1;
+            Checker checkerToMark = checkersStack[lastIndex].GetComponent<Checker>();
+            checkerToMark.ChangeOpacity(mark);
+        }
     }
 
     /*public GameObject RemoveChecker()

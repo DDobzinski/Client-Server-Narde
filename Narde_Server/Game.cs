@@ -22,6 +22,9 @@ namespace Narde_Server
         public List<Point> Board = new();
         public int player1ID;
         public int player2ID;
+        public int hostID;
+        public int player1InvalidMoveCount;
+        public int player2InvalidMoveCount;
         public int player1CheckerCount;
         public int player2CheckerCount;
         public int currentPlayerID;
@@ -31,11 +34,13 @@ namespace Narde_Server
         public bool removingP2 = false;
         public bool firstTurn = true;
         private bool canHigherDieBeUsed = false;
-        public Game(int _player1ID, int _player2ID, int _dice1, int _dice2, int _currentPlayerID)
+        public Game(int _player1ID, int _player2ID, int _dice1, int _dice2, int _currentPlayerID, int _hostID = 0)
         {
-
+            hostID =_hostID;
             player1ID = _player1ID;
             player2ID = _player2ID;
+            player1InvalidMoveCount = 0;
+            player2InvalidMoveCount = 0;
             diceResult1 = _dice1;
             diceResult2 = _dice2;
             currentPlayerID = _currentPlayerID;

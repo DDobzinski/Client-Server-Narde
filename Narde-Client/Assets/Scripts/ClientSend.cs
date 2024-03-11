@@ -76,7 +76,7 @@ public class ClientSend : MonoBehaviour
 
     public static void EndTurn(int dice1, int dice2)
     {
-        using Packet _packet = new((int)ClientPackets.AIEndTurn);
+        using Packet _packet = new((int)ClientPackets.endTurn);
         Debug.Log("SendEndTurn");
         _packet.Write(Client.instance.myId);
         _packet.Write(GameManager.Instance.MovesDone.Count);
@@ -108,13 +108,13 @@ public class ClientSend : MonoBehaviour
         SendTCPData(_packet);
     }
 
-    public static void EndTurnAI(int dice1, int dice2)
+    public static void EndTurnAI(Agent agent,int dice1, int dice2)
     {
-        using Packet _packet = new((int)ClientPackets.endTurn);
-        Debug.Log("Here");
+        using Packet _packet = new((int)ClientPackets.AIEndTurn);
+        
         _packet.Write(Client.instance.myId);
-        _packet.Write(GameManager.Instance.agent.finalMoves.Count);
-        foreach(var move in GameManager.Instance.agent.finalMoves)
+        _packet.Write(agent.finalMoves.Count);
+        foreach(var move in agent.finalMoves)
         {
             _packet.Write(move.StartingPoint.id);
             if(move.TargetPoint != null)
@@ -144,6 +144,13 @@ public class ClientSend : MonoBehaviour
     public static void Surrender()
     {
         using Packet _packet = new((int)ClientPackets.surrender);
+        _packet.Write(Client.instance.myId);
+        SendTCPData(_packet);
+    }
+
+    public static void SwitchStatus()
+    {
+        using Packet _packet = new((int)ClientPackets.switchStatus);
         _packet.Write(Client.instance.myId);
         SendTCPData(_packet);
     }

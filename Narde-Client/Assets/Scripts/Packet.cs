@@ -17,7 +17,11 @@ using UnityEngine;
         allowGame = 7,
         denyGame = 8,
         endGame = 9,
-        updateGame = 10
+        updateGame = 10,
+        invalidTurn = 11,
+        hostLeft = 12,
+        confirmSwitch = 13,
+        denySwitch = 14
     }
 
     /// <summary>Sent from client to server.</summary>
@@ -31,7 +35,8 @@ using UnityEngine;
         startGame = 6,
         surrender = 7,
         endTurn = 8,
-        AIEndTurn = 9
+        AIEndTurn = 9,
+        switchStatus = 10
     }
 
     public class Packet : IDisposable

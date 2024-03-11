@@ -33,13 +33,38 @@ public class Checker : MonoBehaviour
         rectTransform.anchoredPosition = new Vector2(parentRectTransform.rect.width / 2, startingPointY);
     }
 
-    public void MakeCheckerInvisible()
+    public void MakeCheckerInvisible(bool invisible)
     {
-        var spriteRenderer = GetComponent<SpriteRenderer>();
-        if (spriteRenderer != null)
+        if (TryGetComponent<SpriteRenderer>(out var spriteRenderer))
         {
             Color color = spriteRenderer.color;
-            color.a = 0f; // Set alpha to 0 for full transparency
+            if(invisible)
+            {
+                color.a = 0f;
+            }
+            else
+            {
+                color.a = 1f;
+            }
+            
+            spriteRenderer.color = color;
+        }
+    }
+
+    public void ChangeOpacity(bool change)
+    {
+        if (TryGetComponent<SpriteRenderer>(out var spriteRenderer))
+        {
+            Color color = spriteRenderer.color;
+            if(change)
+            {
+                color.a = 0.8f;
+            }
+            else
+            {
+                color.a = 1f;
+            }
+            
             spriteRenderer.color = color;
         }
     }

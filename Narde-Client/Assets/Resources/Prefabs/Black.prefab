@@ -60,7 +60,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.3372549, g: 0.33333334, b: 0.30588236, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -143,4 +143,3 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   checkerColor: 1
   yOffset: 22
-  transparentMaterial: {fileID: 2100000, guid: ed2b7e8e38ce3944c93bc573503039df, type: 2}

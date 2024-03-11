@@ -74,4 +74,18 @@ public class CreateLobby : MonoBehaviour
         CreateButton.interactable = true;
         waitingPanel.SetActive(false);
     }
+
+    
+    public void UpdateSpectatorSlider()
+    {
+        if (TypeDropDown.value == 2) // index of AI v AI option
+        {
+            SpectatorSlider.minValue = 1;
+            if (SpectatorSlider.value < 1) SpectatorSlider.value = 1;
+        }
+        else
+        {
+            SpectatorSlider.minValue = 0;
+        }
+    }
 }

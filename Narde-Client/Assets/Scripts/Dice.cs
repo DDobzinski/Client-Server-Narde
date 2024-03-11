@@ -23,7 +23,7 @@ public class Dice : MonoBehaviour {
         // Load dice sides sprites to array from DiceSides subfolder of Resources folder
         diceSides = Resources.LoadAll<Sprite>("DiceSides/");
 
-        if(Client.instance.player.turn)
+        if(Client.instance.player.turn && Client.instance.player.currentStatus == PlayerStatus.Player)
         {
             EnableDice();
             SetFinalDice(Client.instance.player.dice1, Client.instance.player.dice2);
@@ -52,7 +52,7 @@ public class Dice : MonoBehaviour {
         // Final side or value that dice reads in the end of coroutine
         // Loop to switch dice sides ramdomly
         // before final side appears. 20 itterations here.
-        for (int i = 0; i <= 20; i++)
+        for (int i = 0; i <= 12; i++)
         {
             // Pick up random value from 0 to 5 (All inclusive)
             randomDiceSide = UnityEngine.Random.Range(0, 6);
@@ -70,7 +70,7 @@ public class Dice : MonoBehaviour {
         rend2.sprite = diceSides[finalSide2];
         finalSide += 1;
         finalSide2 += 1;
-        if(Client.instance.player.turn)
+        if(Client.instance.player.turn && Client.instance.player.currentStatus == PlayerStatus.Player)
         {
             OnDiceRolled?.Invoke(finalSide, finalSide2); // Trigger event with final dice results
         }

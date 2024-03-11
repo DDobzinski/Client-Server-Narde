@@ -29,7 +29,7 @@ public class AgentWeights
     public double home = 0.2;
     public double home_middle = 0.3;
     public double home_end = 0.3;
-    public double rand = 0.05;
+    public double rand = 0;
     public List<double> field_start = new List<double>
     {
         0, 1.0, 1.05, 1.1, 1.15, 1.2, 1.25, 0, 0, 0.1, 0.2, 0.0, 0.4, 1.0, 1.6, 1.7, 2, 2, 2, 0, 0, 0, 0, 0
