@@ -79,7 +79,8 @@ namespace Narde_Server
                 {(int)ClientPackets.surrender, ServerHandle.PlayerSurrender},
                 {(int)ClientPackets.endTurn, ServerHandle.PlayerEndTurn},
                 {(int)ClientPackets.endTurnAI, ServerHandle.AIEndTurn},
-                {(int)ClientPackets.switchStatus, ServerHandle.SwitchStatus}
+                {(int)ClientPackets.switchStatus, ServerHandle.SwitchStatus},
+                {(int)ClientPackets.sendMessage, ServerHandle.ForwardMessage}
             };
             Console.WriteLine("Initialized packets.");
         }

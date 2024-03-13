@@ -230,6 +230,19 @@ public class ClientHandle : MonoBehaviour
         //Maybe check later if id matches
     }
 
+    public static void UpdateChat(Packet _packet)
+    {
+        
+        int _myId = _packet.ReadInt();
+        string username = _packet.ReadString();
+        string message = _packet.ReadString();
+        bool player = _packet.ReadBool();
+        UIManager.instance.lobbyScript.AddChatMessage(username, message, player);
+        
+        //Client.instance.myId = _myId;
+        //Maybe check later if id matches
+    }
+
     public static void AllowGame(Packet _packet)
     {
         
@@ -291,38 +304,19 @@ public class ClientHandle : MonoBehaviour
         Client.instance.player.turn = turn;
         Client.instance.player.dice1 = _dice1;
         Client.instance.player.dice2 = _dice2;
+        
+
         List<List<int>> list = new();
         if(turn || Client.instance.player.currentStatus == PlayerStatus.Spectator)
         {
-            if(Client.instance.player.lobby.GetLobbyType().Equals("AIvAI") && turn)
+            
+            for (int i = 0; i < moveCount; i++)
             {
-                for (int i = 0; i < moveCount; i++)
-                {
-                    int start = _packet.ReadInt();
-                    int end = _packet.ReadInt();
-                 /*   if(!GameManager.Instance.advancedFirst && Client.instance.player.currentPlayerName.Equals("Advanced Agent") || 
-                    GameManager.Instance.advancedFirst && Client.instance.player.currentPlayerName.Equals("Random Agent"))
-                    {
-                        start = (start + 12) % 24;
-                        if(end != 24)
-                        {
-                            end = (end + 12) % 24;
-                        }
-                    }*/
-                    
-                    list.Add(new List<int>{start, end});
-                    
-                }
+                int start = _packet.ReadInt();
+                int end = _packet.ReadInt();
+                list.Add(new List<int>{start, end});
             }
-            else
-            {
-                for (int i = 0; i < moveCount; i++)
-                {
-                    int start = _packet.ReadInt();
-                    int end = _packet.ReadInt();
-                    list.Add(new List<int>{start, end});
-                }
-            }
+            
             
             GameManager.Instance.UpdateBoard(list);
         }
@@ -347,48 +341,7 @@ public class ClientHandle : MonoBehaviour
             GameManager.Instance.agent.SetDice(_dice1, _dice2);
             GameManager.Instance.WaitForAIToStartCalc(2f, GameManager.Instance.agent);
         }
-        else if (Client.instance.player.lobby.GetLobbyType().Equals("AIvAI") && turn)
-        {
-            
-            if(Client.instance.player.currentPlayerName.Equals("Advanced Agent"))
-            {
-                for (int i = 0; i < list.Count; i++)
-                {
-                    int start = list[i][0];
-                    int end = list[i][1];
-                    if(!GameManager.Instance.advancedFirst)
-                    {
-                        start = (start + 12) % 24;
-                        if(end != 24)
-                        {
-                            end = (end + 12) % 24;
-                        }
-                    }
-                    GameManager.Instance.agent.UpdateBoard(start, end);
-                }
-                GameManager.Instance.agent.SetDice(_dice1, _dice2);
-                GameManager.Instance.WaitForAIToStartCalc(5f, GameManager.Instance.agent);
-            }
-            else
-            {
-                for (int i = 0; i < list.Count; i++)
-                {
-                    int start = list[i][0];
-                    int end = list[i][1];
-                    if(GameManager.Instance.advancedFirst)
-                    {
-                        start = (start + 12) % 24;
-                        if(end != 24)
-                        {
-                            end = (end + 12) % 24;
-                        }
-                    }
-                    GameManager.Instance.agent2.UpdateBoard(start, end);
-                }
-                GameManager.Instance.agent2.SetDice(_dice1, _dice2);
-                GameManager.Instance.WaitForAIToStartCalc(5f, GameManager.Instance.agent2);
-            }
-        }
+       
         //Client.instance.myId = _myId;
         //Maybe check later if id matches
     }

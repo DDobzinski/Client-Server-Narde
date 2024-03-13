@@ -77,7 +77,7 @@ public class ClientSend : MonoBehaviour
     public static void EndTurn(int dice1, int dice2)
     {
         using Packet _packet = new((int)ClientPackets.endTurn);
-        Debug.Log("SendEndTurn");
+        
         _packet.Write(Client.instance.myId);
         _packet.Write(GameManager.Instance.MovesDone.Count);
         foreach(var move in GameManager.Instance.MovesDone)
@@ -152,6 +152,14 @@ public class ClientSend : MonoBehaviour
     {
         using Packet _packet = new((int)ClientPackets.switchStatus);
         _packet.Write(Client.instance.myId);
+        SendTCPData(_packet);
+    }
+
+    public static void SendChatMessage(string message)
+    {
+        using Packet _packet = new((int)ClientPackets.sendMessage);
+        _packet.Write(Client.instance.myId);
+        _packet.Write(message);
         SendTCPData(_packet);
     }
     #endregion

@@ -119,7 +119,7 @@ namespace Narde_Server
 
                 if(_asSpectator)
                 {
-                    if(Server.lobbies[_lobbyID].status == LobbyStatus.Open || Server.lobbies[_lobbyID].status == LobbyStatus.SpectatorsOnly) 
+                    if((Server.lobbies[_lobbyID].status == LobbyStatus.Open || Server.lobbies[_lobbyID].status == LobbyStatus.SpectatorsOnly)&& Server.lobbies[_lobbyID].gameState == GameState.Menu) 
                     {
                         Console.WriteLine($"{_fromClient} joined lobby {_lobbyID} as spectator.");
                         Server.lobbies[_lobbyID].AddSpectator(Server.clients[_id]);
@@ -146,7 +146,7 @@ namespace Narde_Server
                 }
                 else
                 {
-                    if(Server.lobbies[_lobbyID].status == LobbyStatus.Open || Server.lobbies[_lobbyID].status == LobbyStatus.PlayersOnly) 
+                    if((Server.lobbies[_lobbyID].status == LobbyStatus.Open || Server.lobbies[_lobbyID].status == LobbyStatus.PlayersOnly) && Server.lobbies[_lobbyID].gameState == GameState.Menu) 
                     {
                         Console.WriteLine($"{_fromClient} created joined lobby {_lobbyID} as player.");
                         Server.lobbies[_lobbyID].AddPlayer(Server.clients[_id]);
@@ -190,7 +190,7 @@ namespace Narde_Server
             {
                 PlayerStatus status = Server.clients[_fromClient].player.currentStatus;
                 Lobby lobby = Server.clients[_fromClient].player.currentLobby;
-                if(status == PlayerStatus.Player)
+                if(status == PlayerStatus.Player && lobby.gameState == GameState.Menu)
                 {
                     if(lobby.status == LobbyStatus.Open || lobby.status == LobbyStatus.SpectatorsOnly) 
                     {
@@ -217,7 +217,7 @@ namespace Narde_Server
                         ServerSend.DenySwitch(_fromClient);
                     }
                 }
-                else if(status == PlayerStatus.Spectator)
+                else if(status == PlayerStatus.Spectator && lobby.gameState == GameState.Menu)
                 {
                     if(lobby.status == LobbyStatus.Open || lobby.status == LobbyStatus.PlayersOnly) 
                     {
@@ -255,6 +255,39 @@ namespace Narde_Server
             
             //Server.clients[_fromClient].player = new Player(_fromClient, _username);
         }
+        
+         public static void ForwardMessage(int _fromClient, Packet _packet)
+        {
+            int _id = _packet.ReadInt();
+            string message = _packet.ReadString();
+            if(_id == _fromClient)
+            {
+                PlayerStatus status = Server.clients[_fromClient].player.currentStatus;
+                Lobby lobby = Server.clients[_fromClient].player.currentLobby;
+                if((status == PlayerStatus.Player || status == PlayerStatus.Spectator ) && lobby.gameState == GameState.Menu)
+                {
+                    string username = Server.clients[_fromClient].player.username;
+                    bool player = status == PlayerStatus.Player;
+            
+                    
+                    foreach(var client in lobby.PlayerClients)
+                    {   
+                        
+                        ServerSend.ForwardMessage(client.id, username, message, player);
+                        
+                    }
+                    foreach(var client in lobby.SpectatorClients)
+                    {   
+                        ServerSend.ForwardMessage(client.id, username, message, player);
+                        
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine($"ID: {_fromClient}) has assumed the wrong client ID ({_id})!");
+            }
+        }
 
         public static void StartGame(int _fromClient, Packet _packet)
         {
@@ -265,7 +298,7 @@ namespace Narde_Server
                 Player player = Server.clients[_fromClient].player;
                 if(player == null || lobby == null) Console.WriteLine($"Null lobby or player!");
 
-                if(player.currentStatus == PlayerStatus.Player || player.currentStatus == PlayerStatus.Spectator)
+                if((player.currentStatus == PlayerStatus.Player || player.currentStatus == PlayerStatus.Spectator) && lobby.gameState == GameState.Menu)
                 {
                     if(lobby.status == LobbyStatus.SpectatorsOnly || lobby.status == LobbyStatus.Full)
                     {

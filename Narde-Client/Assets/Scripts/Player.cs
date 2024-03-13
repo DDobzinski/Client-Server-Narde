@@ -13,8 +13,8 @@ public class Player
     public Lobby lobby = null;
     public PlayerStatus currentStatus = PlayerStatus.Menu; 
     public bool turn = false;
-    public int dice1 = 0;
-    public int dice2 = 0;
+    public int dice1 = 1;
+    public int dice2 = 1;
     public string currentPlayerName = null;
     public int point1Colour = 0;
     public int point2Colour = 1;

@@ -210,12 +210,13 @@ public class GameManager : MonoBehaviour
                 if(selectedPoint!= point)
                 {
                     point.MarkTopChecker(false);
+                    selectedPoint.MarkTopChecker(false);
                     MoveChecker(selectedPoint, point);
                     MovesDone.Add(FindMoveForPoint(selectedPoint, point));
                     lastMoveDone = MovesDone[^1];
                     List<int> UsedDice = lastMoveDone.DiceUsed;
                     moveNr += UsedDice.Count;
-                    lastMoveDone.StartingPoint.MarkTopChecker(false);
+                    
                     lastMoveDone.TargetPoint.MarkTopChecker(true);
                     if(point.CanRemoveChecker() && !removalStage)
                     {
@@ -246,10 +247,11 @@ public class GameManager : MonoBehaviour
                             moveOfTheHeadLimit = 2;
                         }
                     }
+                    if(moveNr == maxMovesPossible + 1) MakeButtonInteractable(true);
+                    MakeUndoButtonInteractable(true);
                 }
 
-                if(moveNr == maxMovesPossible + 1) MakeButtonInteractable(true);
-                MakeUndoButtonInteractable(true);
+                
 
                 selectedPoint = null;
                 
@@ -777,11 +779,11 @@ public class GameManager : MonoBehaviour
 
     public void SetFinaleDice(int _final1, int _final2)
     {
-        die1.finalSide = _final1 - 1;
-        die1.finalSide2 = _final2 - 1;
+        die1.finalSide = _final1;
+        die1.finalSide2 = _final2;
 
-        die2.finalSide2 = _final1 - 1;
-        die2.finalSide = _final2 - 1;
+        die2.finalSide2 = _final1;
+        die2.finalSide = _final2;
     }
     public void RollDice()
     {
@@ -821,6 +823,8 @@ public class GameManager : MonoBehaviour
         MovesDone = new();
         moveNr = 1;
         lastMoveDone = null;
+        selectedPoint = null;
+        UnhighlightAllPoints();
         if(diceRollResult1 == diceRollResult2)
         {
             diceUseCount1 = 4; 
@@ -862,7 +866,6 @@ public class GameManager : MonoBehaviour
         
         ClientSend.LeaveLobby();
         Client.instance.player.lobby = null;
-        Client.instance.player.lobby.SetStatus(GameState.Menu);
         Client.instance.player.dice1 = 0;
         Client.instance.player.dice2 = 0;
         Client.instance.player.currentPlayerName = null;
@@ -895,8 +898,8 @@ public class GameManager : MonoBehaviour
 
     public void ReturnToMenu()
     {
-        Client.instance.player.dice1 = 0;
-        Client.instance.player.dice2 = 0;
+        Client.instance.player.dice1 = 1;
+        Client.instance.player.dice2 = 1;
         Client.instance.player.currentPlayerName = null;
         SceneManager.LoadScene("Main");
         
@@ -931,15 +934,49 @@ public class GameManager : MonoBehaviour
         {
             if(move[1] != 24)
             {
+                
                 Points[move[1]].MarkTopChecker(false);
-                MoveChecker(Points[move[0]], Points[move[1]]);
                 Points[move[0]].MarkTopChecker(false);
+                MoveChecker(Points[move[0]], Points[move[1]]);
+                
                 Points[move[1]].MarkTopChecker(true);
             }
             else
             {
                 RemoveChecker(Points[move[0]]);
             }
+            if (Client.instance.player.lobby.GetLobbyType().Equals("AIvAI") && Client.instance.player.turn)
+            {
+                if(Client.instance.player.currentPlayerName.Equals("Advanced Agent"))
+                {
+                    int start = move[0];
+                    int end = move[1];
+                    if(!advancedFirst)
+                    {
+                        start = (start + 12) % 24;
+                        if(end != 24)
+                        {
+                            end = (end + 12) % 24;
+                        }
+                    }
+                    agent.UpdateBoard(start, end);                
+                }
+                else
+                {
+                        int start = move[0];
+                        int end = move[1];
+                        if(advancedFirst)
+                        {
+                            start = (start + 12) % 24;
+                            if(end != 24)
+                            {
+                                end = (end + 12) % 24;
+                            }
+                        }
+                        agent2.UpdateBoard(start, end);
+                }   
+            }
+            
             yield return new WaitForSeconds(delayBetweenMoves); // Wait before proceeding to the next move
         }
         onComplete?.Invoke();
@@ -951,9 +988,10 @@ public class GameManager : MonoBehaviour
         
         if(Client.instance.player.turn && Client.instance.player.currentStatus == PlayerStatus.Player)
         {
+            SetFinaleDice(Client.instance.player.dice1, Client.instance.player.dice2);
             EnableDice();
             die1.Reset();
-            SetFinaleDice(Client.instance.player.dice1, Client.instance.player.dice2);
+            
         }
         else
         {
@@ -961,6 +999,20 @@ public class GameManager : MonoBehaviour
             die1.Reset();
             SetFinaleDice(Client.instance.player.dice1, Client.instance.player.dice2);
             RollDice();
+        }
+        if (Client.instance.player.lobby.GetLobbyType().Equals("AIvAI") && Client.instance.player.turn)
+        {
+            
+            if(Client.instance.player.currentPlayerName.Equals("Advanced Agent"))
+            {
+                agent.SetDice(Client.instance.player.dice1, Client.instance.player.dice2);
+                WaitForAIToStartCalc(1f, agent);
+            }
+            else
+            {
+                agent2.SetDice(Client.instance.player.dice1, Client.instance.player.dice2);
+                WaitForAIToStartCalc(1f, agent2);
+            }
         }
     }
     IEnumerator StartAICalculationWithDelay(float delayInSeconds, Agent _agent)

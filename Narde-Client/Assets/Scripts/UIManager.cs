@@ -53,7 +53,7 @@ public class UIManager : MonoBehaviour
                 lobbyListLayout.SetActive(false);
                 lobbyLayout.SetActive(true);
                 menuHeader.text = "Lobby";
-                lobbyScript.lobbyName.text = Client.instance.player.lobby.GetName();
+                
                 UpdateLobbyUI();
             }
         }
@@ -132,12 +132,14 @@ public class UIManager : MonoBehaviour
         lobbyListLayout.SetActive(false);
         lobbyLayout.SetActive(true);
         menuHeader.text = "Lobby";
-        lobbyScript.lobbyName.text = Client.instance.player.lobby.GetName();
+        lobbyScript.ClearChat();
         UpdateLobbyUI();
         
     }
     public void UpdateLobbyUI()
     {
+        lobbyScript.lobbyName.text = Client.instance.player.lobby.GetName();
+        lobbyScript.lobbyType.text = "Lobby Type: " + Client.instance.player.lobby.GetLobbyType();
         lobbyScript.UpdatePlayerListUI();
         lobbyScript.UpdateSpectatorListUI();
         lobbyScript.SetSwitchButton();

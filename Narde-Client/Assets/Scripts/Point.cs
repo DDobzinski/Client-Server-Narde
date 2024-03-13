@@ -171,8 +171,10 @@ public class Point : MonoBehaviour
     {
         if (checkersStack.Count > 0)
         {
+           
             // Remove the top checker from the stack
             int lastIndex = checkersStack.Count - 1;
+            
             Checker checkerToMark = checkersStack[lastIndex].GetComponent<Checker>();
             checkerToMark.ChangeOpacity(mark);
         }

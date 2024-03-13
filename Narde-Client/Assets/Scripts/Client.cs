@@ -214,7 +214,8 @@ public class Client : MonoBehaviour
             {(int) ServerPackets.invalidTurn, ClientHandle.InvalidTurn},
             {(int) ServerPackets.hostLeft, ClientHandle.HostLeft},
             {(int) ServerPackets.confirmSwitch, ClientHandle.ConfirmSwitch},
-            {(int) ServerPackets.denySwitch, ClientHandle.DenySwitch}
+            {(int) ServerPackets.denySwitch, ClientHandle.DenySwitch},
+            {(int) ServerPackets.forwardMessage, ClientHandle.UpdateChat}
         };
         Debug.Log("Initialized packets.");
     }

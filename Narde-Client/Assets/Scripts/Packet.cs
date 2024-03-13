@@ -21,7 +21,8 @@ using UnityEngine;
         invalidTurn = 11,
         hostLeft = 12,
         confirmSwitch = 13,
-        denySwitch = 14
+        denySwitch = 14,
+        forwardMessage = 15
     }
 
     /// <summary>Sent from client to server.</summary>
@@ -36,7 +37,8 @@ using UnityEngine;
         surrender = 7,
         endTurn = 8,
         AIEndTurn = 9,
-        switchStatus = 10
+        switchStatus = 10,
+        sendMessage = 11
     }
 
     public class Packet : IDisposable

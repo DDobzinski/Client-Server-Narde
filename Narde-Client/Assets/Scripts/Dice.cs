@@ -10,8 +10,8 @@ public class Dice : MonoBehaviour {
     // Reference to sprite renderer to change sprites
     private SpriteRenderer rend;
     public SpriteRenderer rend2;
-    public int finalSide = 0;
-    public int finalSide2 = 0;
+    public int finalSide = 1;
+    public int finalSide2 = 1;
     private BoxCollider diceCollider;
     public BoxCollider diceCollider2;
 	// Use this for initialization
@@ -40,6 +40,7 @@ public class Dice : MonoBehaviour {
     private void OnMouseDown()
     {
         StartCoroutine(nameof(RollTheDice));
+        DisableDice();
     }
 
     // Coroutine that rolls the dice
@@ -66,10 +67,9 @@ public class Dice : MonoBehaviour {
 
         // Assigning final side so you can use this value later in your game
         // for player movement for example
-        rend.sprite = diceSides[finalSide];
-        rend2.sprite = diceSides[finalSide2];
-        finalSide += 1;
-        finalSide2 += 1;
+        
+        rend.sprite = diceSides[finalSide-1];
+        rend2.sprite = diceSides[finalSide2-1];
         if(Client.instance.player.turn && Client.instance.player.currentStatus == PlayerStatus.Player)
         {
             OnDiceRolled?.Invoke(finalSide, finalSide2); // Trigger event with final dice results
@@ -80,20 +80,20 @@ public class Dice : MonoBehaviour {
 
     public void DisableDice()
     {
-        diceCollider.enabled = false; // Disable collider to prevent interaction
-        diceCollider2.enabled = false; // Disable collider to prevent interaction
+        diceCollider.enabled = false;
+        diceCollider2.enabled = false;
     }
 
     // Method to re-enable dice, for future use
     public void EnableDice()
     {
-        diceCollider.enabled = true; // Re-enable collider to allow interaction
-        diceCollider2.enabled = true; // Disable collider to prevent interaction
+        diceCollider.enabled = true; 
+        diceCollider2.enabled = true;
     }
     public void SetFinalDice(int final1, int final2)
     {
-        finalSide = final1 - 1; // Re-enable collider to allow interaction
-        finalSide2 = final2 - 1; // Disable collider to prevent interaction
+        finalSide = final1; 
+        finalSide2 = final2; 
     }
     public void StartRollDice()
     {
@@ -104,4 +104,5 @@ public class Dice : MonoBehaviour {
         rend.sprite = diceSides[0];
         rend2.sprite = diceSides[0];
     }
+
 }

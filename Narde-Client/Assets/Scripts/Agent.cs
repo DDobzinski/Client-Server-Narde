@@ -7,11 +7,11 @@ using UnityEngine.SocialPlatforms.Impl;
 public class Agent
 {
     private readonly bool advanced;
-    public List<AgentPoint> Board = new();
+    private List<AgentPoint> Board = new();
     private int dice1;
     private int dice2;
-    bool firstTurnOfTheGame = true;
-    public int maxMovesPossible = 0;
+    private bool firstTurnOfTheGame = true;
+    private int maxMovesPossible = 0;
     public List<AgentMoveOption> finalMoves = new();
     private readonly AgentWeights weights = new();
     private List<int> AIaddWeights = new();
