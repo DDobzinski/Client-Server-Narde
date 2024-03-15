@@ -53,6 +53,7 @@ namespace Narde_Server
             using Packet _packet = new Packet((int)ServerPackets.lobbyCreated);//using block makes so that packet is automatically disposed
             _packet.Write(_msg);
             _packet.Write(_toClient);
+            
             Lobby lobby = Server.clients[_toClient].player.currentLobby;
             _packet.Write(lobby.lobbyId);
             _packet.Write(lobby.lobbyName);

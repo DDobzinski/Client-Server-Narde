@@ -51,7 +51,7 @@ namespace Narde_Server
             {
                 try
                 {
-                    if(socket != null)
+                    if(socket != null && stream!= null)
                     {
                         stream.BeginWrite(_packet.ToArray(), 0, _packet.Length(), null, null);
                     }
@@ -66,6 +66,12 @@ namespace Narde_Server
             {
                 try
                 {
+                    if(stream == null || receiveBuffer == null)
+                    {
+                        Console.WriteLine($"Error receiving TCP data!");
+                        Server.clients[id].Disconnect();
+                        return;
+                    }
                     int _byteLength = stream.EndRead(_result);
                     if(_byteLength <= 0)
                     {
@@ -76,7 +82,7 @@ namespace Narde_Server
 
                     Array.Copy(receiveBuffer, _data, _byteLength);
 
-                    receivedData.Reset(HandleData(_data));
+                    receivedData?.Reset(HandleData(_data));
                     stream.BeginRead(receiveBuffer, 0, dataBufferSize, ReceiveCallback, null);
                 }
                 catch(Exception _ex)
@@ -90,10 +96,10 @@ namespace Narde_Server
             {
                 int _packetLength = 0;
 
-                receivedData.SetBytes(_data);
+                receivedData?.SetBytes(_data);
                 ///Check if receivedData has more than 4 unread bytes
                 ///If it does then we have start of a packet, because int is 4 bytes, and first thing sent is length of packet
-                if(receivedData.UnreadLength() >= 4)
+                if(receivedData?.UnreadLength() >= 4)
                 {
                     _packetLength = receivedData.ReadInt();
 
@@ -103,15 +109,15 @@ namespace Narde_Server
                     }
                 }
 
-                while (_packetLength > 0 && _packetLength <= receivedData.UnreadLength())
+                while (_packetLength > 0 && _packetLength <= receivedData?.UnreadLength())
                 {
                     byte[] _packetBytes = receivedData.ReadBytes(_packetLength);
                     ThreadManager.ExecuteOnMainThread(() =>
                     {
-                        using(Packet _packet = new Packet(_packetBytes)) 
+                        using(Packet _packet = new(_packetBytes)) 
                         {
                             int _packetId = _packet.ReadInt();
-                            Server.packetHandlers[_packetId](id, _packet);
+                            Server.packetHandlers?[_packetId](id, _packet);
                         }
                     });
 
@@ -138,6 +144,7 @@ namespace Narde_Server
 
             public void Disconnect()
             {
+                if(socket==null) return;
                 socket.Close();
                 stream = null;
                 receivedData = null;
@@ -146,13 +153,13 @@ namespace Narde_Server
             }
         }
 
-        private void Disconnect()
+        public void Disconnect()
         {
-            if(player != null && player.currentStatus == PlayerStatus.Player) player.currentLobby.RemovePlayer(Server.clients[id]);
-            else if(player != null && player.currentStatus == PlayerStatus.Spectator) player.currentLobby.RemoveSpectator(Server.clients[id]);
+            if(player != null && player.currentStatus == PlayerStatus.Player) player.currentLobby?.RemovePlayer(Server.clients[id]);
+            else if(player != null && player.currentStatus == PlayerStatus.Spectator) player.currentLobby?.RemoveSpectator(Server.clients[id]);
             player = null;
-            Console.WriteLine($"{tcp.socket.Client.RemoteEndPoint} has disconnected.");
-            tcp.Disconnect();
+            Console.WriteLine($"{tcp?.socket?.Client.RemoteEndPoint} has disconnected.");
+            tcp?.Disconnect();
             
         }
     }

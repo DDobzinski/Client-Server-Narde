@@ -19,9 +19,9 @@ public class Point : MonoBehaviour
     public Color selectedColor;
     private Image pointImage;
     public PointType pointType;
-    public List<GameObject> checkersStack = new List<GameObject>();
-    private List<GameObject> removedCheckersStack = new List<GameObject>();
-    public List<MoveOption> possibleMoves = new List<MoveOption>();
+    public List<GameObject> checkersStack = new();
+    private List<GameObject> removedCheckersStack = new();
+    public List<MoveOption> possibleMoves = new();
     void Start()
     {
         pointImage = GetComponent<Image>();
@@ -105,9 +105,10 @@ public class Point : MonoBehaviour
             int lastIndex = removedCheckersStack.Count - 1;
             GameObject checker = removedCheckersStack[lastIndex];
             removedCheckersStack.RemoveAt(lastIndex);
-
+            
             return checker;
         }
+        
         return null;
     }
 

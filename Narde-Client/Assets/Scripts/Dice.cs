@@ -30,6 +30,10 @@ public class Dice : MonoBehaviour {
         }
         else
         {
+            if(!Client.instance.player.turn && Client.instance.player.currentStatus == PlayerStatus.Player)
+            {
+                ChangeOpacity(Client.instance.player.turn);
+            }
             DisableDice();
             SetFinalDice(Client.instance.player.dice1, Client.instance.player.dice2);
             StartRollDice();
@@ -104,5 +108,18 @@ public class Dice : MonoBehaviour {
         rend.sprite = diceSides[0];
         rend2.sprite = diceSides[0];
     }
-
+    public void ChangeOpacity(bool change)
+    {
+        Color color = rend.color;
+        if(change)
+        {
+            color.a = 1f;
+        }
+        else
+        {
+            color.a = 0.8f;
+        }
+        rend.color = color;
+        rend2.color = color;
+    }
 }

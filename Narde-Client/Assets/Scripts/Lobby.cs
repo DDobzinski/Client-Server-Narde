@@ -85,7 +85,7 @@ public class Lobby
     {
         return spectatorNames;
     }
-    public void SetStatus(GameState _state)
+    public void SetState(GameState _state)
     {
         gameState = _state;
     }

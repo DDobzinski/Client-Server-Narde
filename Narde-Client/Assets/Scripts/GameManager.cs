@@ -704,13 +704,13 @@ public class GameManager : MonoBehaviour
                 // Handle the removed checker (e.g., disable it, return to a pool, etc.)
                 Checker checkerComponent = checkerToRemove.GetComponent<Checker>();
                 checkerComponent.MakeCheckerInvisible(true);
-                
+                selectedPoint.AddRemovedChecker(checkerToRemove);
                 selectedPoint = null;
                 if(moveNr == maxMovesPossible + 1) MakeButtonInteractable(true);
                 MakeUndoButtonInteractable(true);
                 UnhighlightAllPoints();
             }
-            selectedPoint.AddRemovedChecker(checkerToRemove);
+            
         }
     }
 
@@ -763,6 +763,10 @@ public class GameManager : MonoBehaviour
             diceUseCount1 = 1; 
             diceUseCount2 = 1;
         }
+        foreach (var point in Points) {
+            point.possibleMoves.Clear();
+        }
+
         MovesDone = new();
         CalculateAllowedMoves(Points, Checker.CheckerColor.Player, Checker.CheckerColor.Enemy, diceUseCount1, diceUseCount2, removalStage);
         diceRolled = true;
@@ -877,6 +881,7 @@ public class GameManager : MonoBehaviour
     {
         UI.interactable = false;
         board.interactable = false;
+        surrenderButton.interactable =false;
         EndPanel.SetActive(true);
         foreach(Point point in Points)
         {
@@ -901,6 +906,7 @@ public class GameManager : MonoBehaviour
         Client.instance.player.dice1 = 1;
         Client.instance.player.dice2 = 1;
         Client.instance.player.currentPlayerName = null;
+        Client.instance.player.lobby.SetState(GameState.Menu);
         SceneManager.LoadScene("Main");
         
     }
@@ -923,7 +929,11 @@ public class GameManager : MonoBehaviour
         }
         moveNr = 1;
         lastMoveDone = null;
-        firstTurnOfTheGame =false;
+        if(MovesDone.Count != 0)
+        {
+            firstTurnOfTheGame =false;
+        }
+        
         diceRolled = false;
         highestDiePossible =false;
         StartCoroutine(UpdateMovesSequence(moves, 1f, UpdateUI));
@@ -989,12 +999,17 @@ public class GameManager : MonoBehaviour
         if(Client.instance.player.turn && Client.instance.player.currentStatus == PlayerStatus.Player)
         {
             SetFinaleDice(Client.instance.player.dice1, Client.instance.player.dice2);
+            die1.ChangeOpacity(Client.instance.player.turn);
             EnableDice();
             die1.Reset();
             
         }
         else
         {
+            if(!Client.instance.player.turn && Client.instance.player.currentStatus == PlayerStatus.Player)
+            {
+                die1.ChangeOpacity(Client.instance.player.turn);
+            }
             DisableDice();
             die1.Reset();
             SetFinaleDice(Client.instance.player.dice1, Client.instance.player.dice2);

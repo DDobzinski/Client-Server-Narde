@@ -19,7 +19,9 @@ public class LobbyManager : MonoBehaviour
     public Button startGame;
     public TMP_Text startGameText;
     public Button switchButton; 
-    public TMP_Text switchButtonText; 
+    public TMP_Text switchButtonText;
+    public ScrollRect scrollRect;
+    public Canvas canvas;
     public void UpdatePlayerListUI()
     {
         ClearPanel(playerPanel);
@@ -129,12 +131,17 @@ public class LobbyManager : MonoBehaviour
         switchFailPanel.SetActive(false);
         startGame.interactable = true;
     }
-    public void SendChatMessage(InputField input)
+    public void SendChatMessage(TMP_InputField input)
     {
         if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) {
             string message = input.text;
             input.text = "";
-            ClientSend.SendChatMessage(message);
+            input.ActivateInputField();
+            if(message.Length> 0)
+            {
+                ClientSend.SendChatMessage(message);
+            }
+            
         }
     }
     public void AddChatMessage(string username, string message, bool player)
@@ -142,12 +149,23 @@ public class LobbyManager : MonoBehaviour
         GameObject chatMessage = Instantiate(chatMessagePrefab, chatListParent);
         chatMessage.name = "ChatMessage";
         TMP_Text SenderName = chatMessage.transform.Find("PlayerName").GetComponent<TMP_Text>();
-        SenderName.text = username;
+        SenderName.text = username+":";
         SenderName.color = player? new Color32(255, 240, 71, 255): new Color32(195, 195, 195, 255);
 
         TMP_Text MessageText = chatMessage.transform.Find("PlayerMessage").GetComponent<TMP_Text>();
         MessageText.text = message;
+        //Canvas.ForceUpdateCanvases();
+        StartCoroutine(DelayedScrollToBottom(0.1f));
     }
+
+    IEnumerator DelayedScrollToBottom(float delaySeconds)
+    {
+        yield return new WaitForSeconds(delaySeconds); // Wait for the specified delay
+        scrollRect.normalizedPosition = new Vector2(0, 0); // Scroll to bottom
+    }
+
+
+
 
     public void ClearChat()
     {

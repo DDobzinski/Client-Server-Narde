@@ -18,10 +18,10 @@ namespace Narde_Server
         public static Dictionary<int, Client> clients = new Dictionary<int, Client>();//Dictionary of clients, id is used as keys
         public static Dictionary<int, Lobby> lobbies = new Dictionary<int, Lobby>();//Dictionary of lobbies, id is used as keys
         public delegate void PacketHandler(int _fromClient, Packet _packet);
-        public static Dictionary<int, PacketHandler> packetHandlers;
+        public static Dictionary<int, PacketHandler>? packetHandlers;
 
         //Handles most of the connection stuff 
-        private static TcpListener tcpListener;
+        private static TcpListener? tcpListener;
         
         //Sets up Server on the start
         public static void Start(int _maxPlayers, int _port)
@@ -45,6 +45,11 @@ namespace Narde_Server
 
         private static void TCPConnectCallback(IAsyncResult _result)
         {
+            if(tcpListener == null)
+            {
+                Console.WriteLine($"Null tcpListener");
+                return;
+            } 
             TcpClient _client = tcpListener.EndAcceptTcpClient(_result);//holds clients info
             
             tcpListener.BeginAcceptTcpClient(new AsyncCallback(TCPConnectCallback), null);

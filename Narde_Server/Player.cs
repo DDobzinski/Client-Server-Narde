@@ -36,6 +36,11 @@ namespace Narde_Server
             currentLobby = null;
             currentStatus = PlayerStatus.Menu;
         }
+
+        public void SetStatus(PlayerStatus  _status)
+        {
+            currentStatus = _status;
+        }
     }
     
 }

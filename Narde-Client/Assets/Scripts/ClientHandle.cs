@@ -178,7 +178,7 @@ public class ClientHandle : MonoBehaviour
             Debug.Log($"Updated Lobby {lobbyid}");
             GameState state = Client.instance.player.lobby.GetState(); 
             Client.instance.player.lobby = new Lobby(lobbyid, lobbyName, lobbyType, lobbyStatus);
-            Client.instance.player.lobby.SetStatus(state);
+            Client.instance.player.lobby.SetState(state);
             for(int i = 0; i< playerCount; i++)
             {
                 Client.instance.player.lobby.AddPlayer(playerNames[i]);
@@ -257,7 +257,7 @@ public class ClientHandle : MonoBehaviour
             
         }
         UIManager.instance.StartGame();
-        Client.instance.player.lobby.SetStatus(GameState.InGame);
+        Client.instance.player.lobby.SetState(GameState.InGame);
         Client.instance.player.turn = _firstMove;
         Client.instance.player.dice1 = _dice1;
         Client.instance.player.dice2 = _dice2;
@@ -322,6 +322,11 @@ public class ClientHandle : MonoBehaviour
         }
         else if(!turn)
         {
+            GameManager.Instance.SwitchTurnText(Client.instance.player.turn);
+            if(Client.instance.player.currentStatus == PlayerStatus.Player)
+            {
+                GameManager.Instance.die1.ChangeOpacity(Client.instance.player.turn);
+            }
             GameManager.Instance.DisableDice();
             GameManager.Instance.die1.Reset();
             GameManager.Instance.SetFinaleDice(Client.instance.player.dice1, Client.instance.player.dice2);

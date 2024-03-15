@@ -14,11 +14,12 @@ namespace Narde_Server
             int _clientIdCheck = _packet.ReadInt();
             string _username = _packet.ReadString();
             
-            Console.WriteLine($"{Server.clients[_fromClient].tcp.socket.Client.RemoteEndPoint} connected and is now player {_fromClient}.");
+            Console.WriteLine($"{Server.clients[_fromClient].tcp.socket?.Client.RemoteEndPoint} connected and is now player {_fromClient}.");
             if(_fromClient != _clientIdCheck)
             {
                 Console.WriteLine($"Player \"{_username}\" (ID: {_fromClient}) has assumed the wrong client ID ({_clientIdCheck})!");
                 //Add Functionality to request Client to change ID
+                Server.clients[_clientIdCheck].Disconnect();
             }
             else
             {
@@ -37,14 +38,14 @@ namespace Narde_Server
             if(_spectatorCount > 4 || _spectatorCount< 0) return;
             for (int i = 1; i <= Server.MaxLobbies; i++)
             {
-                if(Server.lobbies[i].lobbyName == null)//id is empty, means unnocupied
+                if(Server.lobbies[i].lobbyName == null)
                 {
                     Server.lobbies[i].lobbyName = _lobbyName;
                     Server.lobbies[i].gameState = GameState.Menu;
                     Server.lobbies[i].type = _lobbyType switch
                     {
-                        "PvAI" => (LobbyType?)LobbyType.PvAI,// code block
-                        "AIvAI" => (LobbyType?)LobbyType.AIvAI,// code block
+                        "PvAI" => (LobbyType?)LobbyType.PvAI,
+                        "AIvAI" => (LobbyType?)LobbyType.AIvAI,
                         _ => (LobbyType?)LobbyType.PvP,
                     };
                     Server.lobbies[i].SetSpectatorLimit(_spectatorCount);
@@ -73,13 +74,13 @@ namespace Narde_Server
             int _id = _packet.ReadInt();
             if(_id == _fromClient)
             {
-                Lobby lobby = Server.clients[_fromClient].player.currentLobby;
-                Player player = Server.clients[_fromClient].player;
+                Lobby? lobby = Server.clients[_fromClient].player?.currentLobby;
+                Player? player = Server.clients[_fromClient].player;
                 if(player == null || lobby == null) Console.WriteLine($"Null lobby!");
-                if(player.currentStatus == PlayerStatus.Player) lobby.RemovePlayer(Server.clients[_fromClient]);
-                else lobby.RemoveSpectator(Server.clients[_fromClient]);
-                int lobbyID = lobby.lobbyId;
-                player.LeaveLobby();
+                if(player?.currentStatus == PlayerStatus.Player) lobby?.RemovePlayer(Server.clients[_fromClient]);
+                else lobby?.RemoveSpectator(Server.clients[_fromClient]);
+                int? lobbyID = lobby?.lobbyId;
+                player?.LeaveLobby();
                 Console.WriteLine($"ID: {_fromClient}) left lobby ID ({lobbyID})!");
             }
             else
@@ -188,16 +189,16 @@ namespace Narde_Server
             int _id = _packet.ReadInt();
             if(_id == _fromClient)
             {
-                PlayerStatus status = Server.clients[_fromClient].player.currentStatus;
-                Lobby lobby = Server.clients[_fromClient].player.currentLobby;
-                if(status == PlayerStatus.Player && lobby.gameState == GameState.Menu)
+                PlayerStatus? status = Server.clients[_fromClient].player?.currentStatus;
+                Lobby? lobby = Server.clients[_fromClient].player?.currentLobby;
+                if(status == PlayerStatus.Player && lobby?.gameState == GameState.Menu)
                 {
                     if(lobby.status == LobbyStatus.Open || lobby.status == LobbyStatus.SpectatorsOnly) 
                     {
                         Console.WriteLine($"{_fromClient} switched to spectator.");
                         lobby.AddSpectator(Server.clients[_id]);
                         lobby.RemovePlayer(Server.clients[_id], true);
-                        Server.clients[_fromClient].player.currentStatus = PlayerStatus.Spectator;
+                        Server.clients[_fromClient].player?.SetStatus(PlayerStatus.Spectator);
 
                         ServerSend.ConfirmSwitch(_id);
                         foreach(var client in lobby.PlayerClients)
@@ -217,14 +218,18 @@ namespace Narde_Server
                         ServerSend.DenySwitch(_fromClient);
                     }
                 }
-                else if(status == PlayerStatus.Spectator && lobby.gameState == GameState.Menu)
+                else if(status == PlayerStatus.Spectator && lobby?.gameState == GameState.Menu)
                 {
                     if(lobby.status == LobbyStatus.Open || lobby.status == LobbyStatus.PlayersOnly) 
                     {
                         Console.WriteLine($"{_fromClient} switched to player.");
                         lobby.AddPlayer(Server.clients[_id]);
                         lobby.RemoveSpectator(Server.clients[_id], true);
-                        Server.clients[_fromClient].player.currentStatus = PlayerStatus.Player;
+                        if(Server.clients[_fromClient].player != null)
+                        {
+                            Server.clients[_fromClient].player?.SetStatus(PlayerStatus.Player);
+                        }
+                        
                         ServerSend.ConfirmSwitch(_id);
 
                         foreach(var client in lobby.PlayerClients)
@@ -262,23 +267,37 @@ namespace Narde_Server
             string message = _packet.ReadString();
             if(_id == _fromClient)
             {
-                PlayerStatus status = Server.clients[_fromClient].player.currentStatus;
-                Lobby lobby = Server.clients[_fromClient].player.currentLobby;
-                if((status == PlayerStatus.Player || status == PlayerStatus.Spectator ) && lobby.gameState == GameState.Menu)
+                PlayerStatus? status = Server.clients[_fromClient].player?.currentStatus;
+                Lobby? lobby = Server.clients[_fromClient].player?.currentLobby;
+                if((status == PlayerStatus.Player || status == PlayerStatus.Spectator ) && lobby?.gameState == GameState.Menu)
                 {
-                    string username = Server.clients[_fromClient].player.username;
+                    string? username = Server.clients[_fromClient].player?.username;
                     bool player = status == PlayerStatus.Player;
             
                     
                     foreach(var client in lobby.PlayerClients)
                     {   
+                        if(username == null)
+                        {
+                            ServerSend.ForwardMessage(client.id, "username", message, player);
+                        }
+                        else
+                        {
+                            ServerSend.ForwardMessage(client.id, username, message, player);
+                        }   
                         
-                        ServerSend.ForwardMessage(client.id, username, message, player);
                         
                     }
                     foreach(var client in lobby.SpectatorClients)
                     {   
-                        ServerSend.ForwardMessage(client.id, username, message, player);
+                        if(username == null)
+                        {
+                            ServerSend.ForwardMessage(client.id, "username", message, player);
+                        }
+                        else
+                        {
+                            ServerSend.ForwardMessage(client.id, username, message, player);
+                        } 
                         
                     }
                 }
@@ -294,11 +313,11 @@ namespace Narde_Server
             int _id = _packet.ReadInt();
             if(_id == _fromClient)
             {
-                Lobby lobby = Server.clients[_fromClient].player.currentLobby;
-                Player player = Server.clients[_fromClient].player;
+                Lobby? lobby = Server.clients[_fromClient].player?.currentLobby;
+                Player? player = Server.clients[_fromClient].player;
                 if(player == null || lobby == null) Console.WriteLine($"Null lobby or player!");
 
-                if((player.currentStatus == PlayerStatus.Player || player.currentStatus == PlayerStatus.Spectator) && lobby.gameState == GameState.Menu)
+                if((player?.currentStatus == PlayerStatus.Player || player?.currentStatus == PlayerStatus.Spectator) && lobby?.gameState == GameState.Menu)
                 {
                     if(lobby.status == LobbyStatus.SpectatorsOnly || lobby.status == LobbyStatus.Full)
                     {
@@ -394,12 +413,12 @@ namespace Narde_Server
             int _id = _packet.ReadInt();
             if(_id == _fromClient)
             {
-                Lobby lobby = Server.clients[_fromClient].player.currentLobby;
-                Player player = Server.clients[_fromClient].player;
+                Lobby? lobby = Server.clients[_fromClient].player?.currentLobby;
+                Player? player = Server.clients[_fromClient].player;
 
-                if(player.currentStatus == PlayerStatus.Player)
+                if(player?.currentStatus == PlayerStatus.Player)
                 {
-                    if(lobby.gameState == GameState.InGame)
+                    if(lobby?.gameState == GameState.InGame)
                     {
                         string winnerName = "";
                         lobby.gameState = GameState.Menu;
@@ -410,7 +429,14 @@ namespace Narde_Server
                             {
                                 if(client.id != _fromClient)
                                 {
-                                    winnerName = client.player.username;
+                                    if(client.player != null)
+                                    {
+                                        winnerName = client.player.username;
+                                    }
+                                    else
+                                    {
+                                        winnerName = "username";
+                                    }
                                     break;
                                 }
                             }
@@ -445,15 +471,15 @@ namespace Narde_Server
         public static void PlayerEndTurn(int _fromClient, Packet _packet)
         {
             int _id = _packet.ReadInt();
-            Console.WriteLine("EndTurn");
+            
             if(_id == _fromClient)
             {
-                Lobby lobby = Server.clients[_fromClient].player.currentLobby;
-                Player player = Server.clients[_fromClient].player;
+                Lobby? lobby = Server.clients[_fromClient].player?.currentLobby;
+                Player? player = Server.clients[_fromClient].player;
 
-                if(player.currentStatus == PlayerStatus.Player)
+                if(player?.currentStatus == PlayerStatus.Player)
                 {
-                    if(lobby.gameState == GameState.InGame && (lobby.game.currentPlayerID == _fromClient || lobby.type == LobbyType.PvAI && (_fromClient == lobby.game.player1ID || _fromClient == lobby.game.player2ID)))
+                    if(lobby?.gameState == GameState.InGame && (lobby.game?.currentPlayerID == _fromClient || lobby.type == LobbyType.PvAI && (_fromClient == lobby.game.player1ID || _fromClient == lobby.game.player2ID)))
                     {
                         
                         int moveCount = _packet.ReadInt();
@@ -476,7 +502,7 @@ namespace Narde_Server
                         bool valid = Server.clients[_fromClient].player.currentLobby.game.ValidateTurn(moves);
                         if(valid)
                         {
-                            int playerWon = Server.clients[_fromClient].player.currentLobby.game.CheckForWin();
+                            int? playerWon = Server.clients[_fromClient].player?.currentLobby?.game?.CheckForWin();
 
                             if(playerWon == 1)
                             {
@@ -596,8 +622,8 @@ namespace Narde_Server
                         }
                         else
                         {
-                            Game game = Server.clients[_fromClient].player.currentLobby.game;
-                            if(game.player1ID == game.currentPlayerID)
+                            Game? game = Server.clients[_fromClient].player?.currentLobby?.game;
+                            if(game?.player1ID == game?.currentPlayerID)
                             {
                                 game.player1InvalidMoveCount ++;
                                 if(game.player1InvalidMoveCount > 2)
@@ -710,7 +736,7 @@ namespace Narde_Server
         public static void AIEndTurn(int _fromClient, Packet _packet)
         {
             int _id = _packet.ReadInt();
-            Console.WriteLine("EndTurn");
+            
             if(_id == _fromClient)
             {
                 Lobby lobby = Server.clients[_fromClient].player.currentLobby;

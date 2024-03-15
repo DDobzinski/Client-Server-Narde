@@ -28,7 +28,7 @@ namespace Narde_Server
         public int lobbyId { get; set; }
         public string? lobbyName { get; set; }
         public List<Client> PlayerClients { get; set; }
-        public List<Client>? SpectatorClients { get; set; }
+        public List<Client> SpectatorClients { get; set; }
         public int spectatorLimit { get; set; }
         public LobbyType? type {get; set;}
         public LobbyStatus? status { get; set; }
@@ -61,7 +61,7 @@ namespace Narde_Server
                     status = LobbyStatus.SpectatorsOnly;
                 }
             }
-            player.player.JoinLobby(this, PlayerStatus.Player);
+            player.player?.JoinLobby(this, PlayerStatus.Player);
         }
 
         // Method to remove a player from the lobby
@@ -70,13 +70,13 @@ namespace Narde_Server
             PlayerClients.Remove(player);
             if(!temp)
             {
-                player.player.LeaveLobby();
+                player.player?.LeaveLobby();
             }
             
             if(type == LobbyType.PvP && gameState == GameState.InGame)
             {
-                
-                ServerSend.EndGame(PlayerClients[0].id, PlayerClients[0].player.username);
+                if(PlayerClients[0].player == null) return;
+                ServerSend.EndGame(PlayerClients[0].id, PlayerClients[0]?.player?.username);
                 
 
                 foreach(var client in SpectatorClients)
@@ -118,7 +118,7 @@ namespace Narde_Server
         public void AddSpectator(Client spectator)
         {
             SpectatorClients?.Add(spectator);
-            if(SpectatorClients.Count == spectatorLimit)
+            if(SpectatorClients?.Count == spectatorLimit)
             {
                 if(status == LobbyStatus.SpectatorsOnly)
                 {
@@ -129,7 +129,7 @@ namespace Narde_Server
                     status = LobbyStatus.PlayersOnly;
                 }
             }
-            spectator.player.JoinLobby(this, PlayerStatus.Spectator);
+            spectator.player?.JoinLobby(this, PlayerStatus.Spectator);
         }
 
         
@@ -152,8 +152,8 @@ namespace Narde_Server
                 status = LobbyStatus.SpectatorsOnly;
             }
             
-            if(PlayerClients.Count == 0 && SpectatorClients.Count == 0) Reset();
-            else if(!temp)
+            if(PlayerClients?.Count == 0 && SpectatorClients?.Count == 0) Reset();
+            else if(!temp && Server.lobbies[lobbyId].PlayerClients !=null)
             {
                    
                 foreach(var client in Server.lobbies[lobbyId].PlayerClients)

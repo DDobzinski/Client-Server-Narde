@@ -60,7 +60,7 @@ namespace Narde_Server
             int dice1Uses = 0;
             int dice2Uses = 0;
             int movesFromHead = 0;
-            Console.WriteLine($"Total Moves : {moves.Count}");
+            //Console.WriteLine($"Total Moves : {moves.Count}");
             bool removingP1Temp = removingP1;
             bool removingP2Temp = removingP2;
             List<Point> BoardCopy = new();
@@ -200,7 +200,7 @@ namespace Narde_Server
                     movesPossible = CalculateAllowedMoves(BoardCopy, dice1UsesSim, dice2UsesSim, headIndex, lastIndex, removingP2, movesPossible, maxMoves);
                     
                 }
-                Console.WriteLine($"Moves Possible : {movesPossible}");
+                //Console.WriteLine($"Moves Possible : {movesPossible}");
                 if(movesUsed != movesPossible)
                 {
                     Console.WriteLine($"More moves possible");
@@ -219,14 +219,14 @@ namespace Narde_Server
                     } 
                 }
             }
-            Console.WriteLine($"Success");
+            //Console.WriteLine($"Success");
             FinalizeTurn(moves, removingP1Temp, removingP2Temp);
             return true;
         }
 
         public bool ValidateMove(List<Point> Board,Move move, int dice1Uses, int dice2Uses, int lastIndex, bool removingP1Temp, bool removingP2Temp)
         {
-            Console.WriteLine($"Start({move.StartingPoint}), target({move.TargetPoint}), dice used {move.DiceUsed.Count}");
+            //Console.WriteLine($"Start({move.StartingPoint}), target({move.TargetPoint}), dice used {move.DiceUsed.Count}");
             int totalDice = 0;
             int enemyPlayerId = currentPlayerID == player1ID? player2ID: player1ID;
             if(move.StartingPoint < 24 && move.StartingPoint >= 0)
@@ -396,9 +396,6 @@ namespace Narde_Server
                     currentPoint = midpoint;
                 }
             }
-            //ADD FOR FIRST MOVE RULES
-            //Add for moving from head
-            //Add removing
 
             return true;
         }
