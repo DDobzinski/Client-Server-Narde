@@ -41,7 +41,7 @@ namespace Narde_Server
         //Input: id of client to send packet, string with message to send
         public static void Welcome(int _toClient, string _msg)
         {
-            using Packet _packet = new Packet((int)ServerPackets.welcome);//using block makes so that packet is automatically disposed
+            using Packet _packet = new((int)ServerPackets.welcome);//using block makes so that packet is automatically disposed
             _packet.Write(_msg);
             _packet.Write(_toClient);
 
@@ -50,7 +50,7 @@ namespace Narde_Server
 
         public static void LobbyCreated(int _toClient, string _msg)
         {
-            using Packet _packet = new Packet((int)ServerPackets.lobbyCreated);//using block makes so that packet is automatically disposed
+            using Packet _packet = new((int)ServerPackets.lobbyCreated);//using block makes so that packet is automatically disposed
             _packet.Write(_msg);
             _packet.Write(_toClient);
             
@@ -95,7 +95,7 @@ namespace Narde_Server
 
         public static void SendLobbies(int _toClient)
         {
-            List<Lobby> allowedLobbies = new List<Lobby>();
+            List<Lobby> allowedLobbies = new();
             for(int i = 1; i <= Server.MaxLobbies; i++)
             {
                 Lobby lobby = Server.lobbies[i];
@@ -104,7 +104,7 @@ namespace Narde_Server
                     allowedLobbies.Add(lobby);
                 }
             }
-            using Packet _packet = new Packet((int)ServerPackets.sendLobbies);//using block makes so that packet is automatically disposed
+            using Packet _packet = new((int)ServerPackets.sendLobbies);//using block makes so that packet is automatically disposed
             _packet.Write(_toClient);
             _packet.Write(allowedLobbies.Count);
             foreach (var lobby in allowedLobbies)
@@ -147,7 +147,7 @@ namespace Narde_Server
 
         public static void RejectLobby(int _toClient)
         {
-            List<Lobby> allowedLobbies = new List<Lobby>();
+            List<Lobby> allowedLobbies = new();
             for(int i = 1; i <= Server.MaxLobbies; i++)
             {
                 Lobby lobby = Server.lobbies[i];
@@ -156,7 +156,7 @@ namespace Narde_Server
                     allowedLobbies.Add(lobby);
                 }
             }
-            using Packet _packet = new Packet((int)ServerPackets.sendLobbies);//using block makes so that packet is automatically disposed
+            using Packet _packet = new((int)ServerPackets.sendLobbies);//using block makes so that packet is automatically disposed
             _packet.Write(_toClient);
             _packet.Write(allowedLobbies.Count);
             foreach (var lobby in allowedLobbies)
@@ -198,7 +198,7 @@ namespace Narde_Server
 
         public static void ConfirmJoin(int _toClient, int _lobbyID)
         {
-            using Packet _packet = new Packet((int)ServerPackets.confirmJoin);//using block makes so that packet is automatically disposed
+            using Packet _packet = new((int)ServerPackets.confirmJoin);//using block makes so that packet is automatically disposed
             _packet.Write(_toClient);
             Lobby lobby = Server.lobbies[_lobbyID];
             _packet.Write(lobby.lobbyId);
@@ -253,7 +253,7 @@ namespace Narde_Server
 
         public static void UpdateLobby(int _toClient, int _lobbyID)
         {
-            using Packet _packet = new Packet((int)ServerPackets.updateLobby);//using block makes so that packet is automatically disposed
+            using Packet _packet = new((int)ServerPackets.updateLobby);//using block makes so that packet is automatically disposed
             _packet.Write(_toClient);
             Lobby lobby = Server.lobbies[_lobbyID];
             _packet.Write(lobby.lobbyId);
@@ -332,7 +332,7 @@ namespace Narde_Server
 
         public static void AllowGame(int _toClient, bool firstMove, int dice1, int dice2, bool mainAI = false)
         {
-            using Packet _packet = new Packet((int)ServerPackets.allowGame);//using block makes so that packet is automatically disposed
+            using Packet _packet = new((int)ServerPackets.allowGame);//using block makes so that packet is automatically disposed
             _packet.Write(_toClient);
             _packet.Write(firstMove);
             _packet.Write(dice1);
@@ -365,7 +365,7 @@ namespace Narde_Server
 
         public static void EndGame(int _toClient, string WinnerName)
         {
-            using Packet _packet = new Packet((int)ServerPackets.endGame);//using block makes so that packet is automatically disposed
+            using Packet _packet = new((int)ServerPackets.endGame);//using block makes so that packet is automatically disposed
             _packet.Write(_toClient);
             _packet.Write(WinnerName);
             SendTCPData(_toClient, _packet);
@@ -373,14 +373,14 @@ namespace Narde_Server
 
         public static void DenyGame(int _toClient)
         {
-            using Packet _packet = new Packet((int)ServerPackets.denyGame);//using block makes so that packet is automatically disposed
+            using Packet _packet = new((int)ServerPackets.denyGame);//using block makes so that packet is automatically disposed
             _packet.Write(_toClient);
             SendTCPData(_toClient, _packet);
         }
 
         public static void UpdateGame(int _toClient, bool turn, int dice1, int dice2, List<Move> moves, bool advanced = false)
         {
-            using Packet _packet = new Packet((int)ServerPackets.updateGame);//using block makes so that packet is automatically disposed
+            using Packet _packet = new((int)ServerPackets.updateGame);//using block makes so that packet is automatically disposed
             _packet.Write(_toClient);
             _packet.Write(turn);
             _packet.Write(dice1);

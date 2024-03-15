@@ -420,6 +420,7 @@ namespace Narde_Server
                 {
                     if(lobby?.gameState == GameState.InGame)
                     {
+                        Console.WriteLine($"LobbyID: {lobby.lobbyId}) ended a game!");
                         string winnerName = "";
                         lobby.gameState = GameState.Menu;
                         lobby.game = null;
