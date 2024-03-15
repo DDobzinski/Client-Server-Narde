@@ -334,7 +334,7 @@ namespace Narde_Server
                         int playDiceRoll1 = rand.Next(1, 7);
                         int playDiceRoll2 = rand.Next(1, 7);
                         bool p1 = diceRoll1 > diceRoll2;
-                        
+                        Console.WriteLine($"LobbyID: {lobby.lobbyId}) has started a game!");
                         if(p1)
                         {
                             if(lobby.type == LobbyType.PvP)
@@ -506,6 +506,7 @@ namespace Narde_Server
 
                             if(playerWon == 1)
                             {
+                                Console.WriteLine($"LobbyID: {lobby.lobbyId}) ended a game!");
                                 if(lobby.type == LobbyType.PvP)
                                 {
                                     foreach(var client in lobby.PlayerClients)
@@ -546,6 +547,7 @@ namespace Narde_Server
                             }
                             else if(playerWon == 2)
                             {
+                                Console.WriteLine($"LobbyID: {lobby.lobbyId}) ended a game!");
                                 if(lobby.type == LobbyType.PvP)
                                 {
                                     foreach(var client in lobby.PlayerClients)
@@ -628,6 +630,7 @@ namespace Narde_Server
                                 game.player1InvalidMoveCount ++;
                                 if(game.player1InvalidMoveCount > 2)
                                 {
+                                    Console.WriteLine($"LobbyID: {lobby.lobbyId}) ended a game!");
                                     if(lobby.type == LobbyType.PvP)
                                     {
                                         foreach(var client in lobby.PlayerClients)
@@ -675,6 +678,7 @@ namespace Narde_Server
                                 game.player2InvalidMoveCount ++;
                                 if(game.player2InvalidMoveCount > 2)
                                 {
+                                    Console.WriteLine($"LobbyID: {lobby.lobbyId}) ended a game!");
                                     if(lobby.type == LobbyType.PvP)
                                     {
                                         foreach(var client in lobby.PlayerClients)

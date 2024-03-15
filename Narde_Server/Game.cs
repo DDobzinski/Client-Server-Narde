@@ -233,7 +233,7 @@ namespace Narde_Server
             {
                 if(Board[move.StartingPoint].playerID != currentPlayerID)
                 {
-                    Console.WriteLine($"StartPoint({move.StartingPoint}) playerId({Board[move.StartingPoint].playerID}) does not match current player({currentPlayerID})");
+                    //Console.WriteLine($"StartPoint({move.StartingPoint}) playerId({Board[move.StartingPoint].playerID}) does not match current player({currentPlayerID})");
                     return false;
                 } 
             }
@@ -242,7 +242,7 @@ namespace Narde_Server
             {
                 if(Board[move.TargetPoint].playerID == enemyPlayerId)
                 {
-                    Console.WriteLine($"Target playerId has enemyPlayerId");
+                    //Console.WriteLine($"Target playerId has enemyPlayerId");
                     return false;
                 }
                 int currentPoint = move.StartingPoint;
@@ -254,7 +254,7 @@ namespace Narde_Server
                     {
                         if(dice1Uses < 1)
                         {
-                            Console.WriteLine($"Dice1Used more than allowed");
+                            //Console.WriteLine($"Dice1Used more than allowed");
                             return false;
                         }
                         dice1Uses -= 1;
@@ -264,7 +264,7 @@ namespace Narde_Server
                     {
                         if(dice2Uses < 1)
                         {
-                            Console.WriteLine($"Dice2Used more than allowed");
+                            //Console.WriteLine($"Dice2Used more than allowed");
                             return false;
                         }
                         dice2Uses -= 1;
@@ -273,20 +273,20 @@ namespace Narde_Server
                     }
                     else
                         {
-                            Console.WriteLine($"Dice value used does not exist");
+                            //Console.WriteLine($"Dice value used does not exist");
                             return false;
                         }
                     
                     if(midpoint < 24 && Board[midpoint].playerID == enemyPlayerId) 
                         {
-                            Console.WriteLine($"MidPoint is blocked");
+                            //Console.WriteLine($"MidPoint is blocked");
                             return false;
                         }
                     if(midpoint < 24 && CreatesRowOfSix(Board, currentPoint, midpoint))
                     {
                         if(!HasOpponentsCheckerPast(Board, midpoint, enemyPlayerId))
                         {
-                            Console.WriteLine($"Creates blockade");
+                           // Console.WriteLine($"Creates blockade");
                             return false;
                         }
                     }
@@ -295,7 +295,7 @@ namespace Narde_Server
                 }
                 if((move.StartingPoint + totalDice) % 24 != move.TargetPoint) 
                 {
-                    Console.WriteLine($"Total dice used is not equal distance to Target. Start({move.StartingPoint}), total({totalDice}), target({move.TargetPoint})");
+                   // Console.WriteLine($"Total dice used is not equal distance to Target. Start({move.StartingPoint}), total({totalDice}), target({move.TargetPoint})");
                     return false;
                 }
 
@@ -311,7 +311,7 @@ namespace Narde_Server
                     {
                         if(dice1Uses < 1)
                         {
-                            Console.WriteLine($"Dice1Used more than allowed");
+                          //  Console.WriteLine($"Dice1Used more than allowed");
                             return false;
                         }
                         dice1Uses -= 1;
@@ -328,7 +328,7 @@ namespace Narde_Server
                     {
                         if(dice2Uses < 1)
                         {
-                            Console.WriteLine($"Dice2Used more than allowed");
+                           // Console.WriteLine($"Dice2Used more than allowed");
                             return false;
                         }
                         dice2Uses -= 1;
@@ -344,20 +344,20 @@ namespace Narde_Server
                     }
                     else
                         {
-                            Console.WriteLine($"Dice value used does not exist");
+                           // Console.WriteLine($"Dice value used does not exist");
                             return false;
                         }
                     
                     if(midpoint < 24 && Board[midpoint].playerID == enemyPlayerId) 
                         {
-                            Console.WriteLine($"MidPoint is blocked");
+                            //Console.WriteLine($"MidPoint is blocked");
                             return false;
                         }
                     if(midpoint < 24 && CreatesRowOfSix(Board, currentPoint, midpoint))
                     {
                         if(!HasOpponentsCheckerPast(Board, midpoint, enemyPlayerId))
                         {
-                            Console.WriteLine($"Creates blockade");
+                            //Console.WriteLine($"Creates blockade");
                             return false;
                         }
                     }
@@ -365,14 +365,14 @@ namespace Narde_Server
                     {
                         if(!(currentPoint <= lastIndex && currentPoint > lastIndex - 6))
                         {
-                            Console.WriteLine($"Not Removal Point");
+                           // Console.WriteLine($"Not Removal Point");
                             return false;
                         }
                         if(currentPlayerID == player1ID)
                         {   
                             if(!removingP1Temp) 
                             {
-                                Console.WriteLine($"Not removal phase p1");
+                              //  Console.WriteLine($"Not removal phase p1");
                                 return false;
                             }
                         }
@@ -380,7 +380,7 @@ namespace Narde_Server
                         {
                             if(!removingP2Temp)
                             {
-                                Console.WriteLine($"Not removal phase p2");
+                                //Console.WriteLine($"Not removal phase p2");
                                 return false;
                             }
                         }
@@ -388,7 +388,7 @@ namespace Narde_Server
 
                         if(!succesfulRemoval)
                         {
-                            Console.WriteLine($"Removal Check blocked");
+                            //Console.WriteLine($"Removal Check blocked");
                             return false;
                         }
                     }

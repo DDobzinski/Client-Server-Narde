@@ -425,7 +425,7 @@ public class Agent
                     possibleMoves.Add(newMoveOption);
                     return true;
                 }
-                Debug.Log("Prev are empty" + previousAreEmpty);
+                //Debug.Log("Prev are empty" + previousAreEmpty);
             }
         }
         
