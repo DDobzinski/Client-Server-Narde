@@ -93,6 +93,12 @@ public class UIManager : MonoBehaviour
         CancelConnect();
         Application.Quit();
     }
+
+    public void QuitFromLogIn()
+    {
+        Application.Quit();
+    }
+
     public void LobbyListOpen()
     {
         mainLayout.SetActive(false);
